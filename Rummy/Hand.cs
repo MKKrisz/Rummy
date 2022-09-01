@@ -12,7 +12,7 @@ namespace Rummy
 
         public Hand(Random r, Deck deck, bool firstPlayer, int playerId)
         {
-            PlayerID = PlayerID;
+            PlayerID = playerId;
             if (firstPlayer) { Cards = deck.Deal(r, 15).ToList(); }
             else             { Cards = deck.Deal(r).ToList();}
         }
