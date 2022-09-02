@@ -46,7 +46,7 @@ namespace Rummy
             }
             
             Console.Clear();
-            Console.Write($"Player {PlayerID}, Round {Round}/n > ");
+            Console.Write($"Player {PlayerID}, Round {Round}\n > ");
 
             List<char> Input = new List<char>();
             
