@@ -43,13 +43,8 @@ namespace Rummy
         public string Description;
         public MethodInfo Info;
         public ParameterInfo[] Params;
-
-        public PlayerInvokable(string name, string description)
-        {
-            Name = name;
-            Description = description;
-        }
-
+        
+        public PlayerInvokable(){}
         public void Invoke(List<Object> parameters) {
             if (parameters.Count > Params.Length) { return;}
             
