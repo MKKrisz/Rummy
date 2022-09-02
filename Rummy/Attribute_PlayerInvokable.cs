@@ -33,6 +33,9 @@ namespace Rummy
         }
     }
 
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    public class TurnEnder : Attribute { }
+
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class PlayerInvokable : Attribute
     {
@@ -47,23 +50,19 @@ namespace Rummy
             Description = description;
         }
 
-        public void Invoke(List<Object> parameters)
-        {
+        public void Invoke(List<Object> parameters) {
             if (parameters.Count > Params.Length) { return;}
-            for (int i = 0; i < Params.Length; i++)
-            {
-                if (!Params[i].IsOptional)
-                {
+            
+            for (int i = 0; i < Params.Length; i++) {
+                if (!Params[i].IsOptional) {
                     if (i >= parameters.Count) { return;}
                     if (Params[i].ParameterType != parameters[i].GetType()) { return; }
                 }
 
-                if (Params[i].IsOptional)
-                {
+                if (Params[i].IsOptional) {
                     if (i >= parameters.Count) { parameters.Add(Params[i].DefaultValue);}
 
-                    if (Params[i].ParameterType != parameters[i].GetType())
-                    {
+                    if (Params[i].ParameterType != parameters[i].GetType()) {
                         parameters[i] = Params[i].DefaultValue;
                     }
                 }

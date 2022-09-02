@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -108,6 +109,10 @@ namespace Rummy
                                 
                             }
                             match.Invoke(Args.ToList());
+                            if (match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
+                            Console.Write("\n>");
+                            Input = new List<char>();
+                            
                         }
                         break;
                     default:

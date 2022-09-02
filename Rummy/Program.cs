@@ -12,6 +12,7 @@ namespace Rummy
         {
             r = new Random();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            PlayerInvokableContainer.Init();
         }
     }
 }
