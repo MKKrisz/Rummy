@@ -7,7 +7,7 @@ namespace Rummy
 {
     public class Hand
     {
-        public List<Card> Cards = new List<Card>();
+        public List<Card> Cards;
         public int PlayerID;
 
         public Hand(Random r, Deck deck, bool firstPlayer, int playerId)
@@ -17,7 +17,8 @@ namespace Rummy
             else             { Cards = deck.Deal(r).ToList();}
         }
         
-        public enum SortType{Suit = 0, Value = 1, Both = 2}    
+        public enum SortType{Suit = 0, Value = 1, Both = 2}
+        [PlayerInvokable(Name = "Sort", Description = "Sorts the hand based on input (0/Suit, 1/Value, 2/Both)")]
         public void Sort(SortType T)
         {
             if (T == SortType.Suit || T == SortType.Both)
@@ -52,6 +53,24 @@ namespace Rummy
                 if (x.Value == y.Value) {return  0;}
                 return  1;
             }
+        }
+
+        [PlayerInvokable(Name = "Switch", Description = "Switches two cards in the hand (useful for manual sorting)")]
+        public void Switch(int a, int b)
+        {
+            if (a > Cards.Count || b > Cards.Count)
+            {
+                Console.Write("Error: one index is out of range");
+                return;
+            }
+            if (a == b)
+            {
+                Console.Write("Error: the ID-s are the same, switching is not required");
+                return;
+            }
+
+            Card buffer = Cards[a].Copy();
+            Cards[b] = Cards[a];
         }
         
         
