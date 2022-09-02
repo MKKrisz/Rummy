@@ -19,15 +19,20 @@ namespace Rummy
             List<MethodInfo> infos = new List<MethodInfo>();
             for (int i = 0; i < assemblies.Length; i++)
             {
+                //gets all methods with "PlayerInvokable" attribute in current assembly
                 infos.AddRange(assemblies[i].GetTypes().SelectMany(t => t.GetMethods())
                     .Where(m => m.GetCustomAttributes().OfType<PlayerInvokable>().Any()).ToList());
             }
 
             for (int i = 0; i < infos.Count(); i++)
             {
+                //Gets the attribute
                 PlayerInvokable p = infos[i].GetCustomAttribute<PlayerInvokable>();
+                //sets attribute's MethodInfo field
                 p.Info = infos[i];
+                //sets attribute's parameters field
                 p.Params = p.Info.GetParameters();
+                //adds attribute to the bunch
                 Methods.Add(p);
             }
         }
@@ -46,23 +51,29 @@ namespace Rummy
         
         public PlayerInvokable(){}
         public void Invoke(List<Object> parameters) {
+            //if more parameters are given, return
             if (parameters.Count > Params.Length) { return;}
             
             for (int i = 0; i < Params.Length; i++) {
                 if (!Params[i].IsOptional) {
+                    //if required parameter does not have a value given, return
                     if (i >= parameters.Count) { return;}
+                    
+                    //if there is a type mismatch between required parameter and given value, return
                     if (Params[i].ParameterType != parameters[i].GetType()) { return; }
                 }
 
                 if (Params[i].IsOptional) {
+                    //if optional parameter does not have a value given, use default value
                     if (i >= parameters.Count) { parameters.Add(Params[i].DefaultValue);}
-
+                    
+                    //if there is a type mismatch, use default parameter
                     if (Params[i].ParameterType != parameters[i].GetType()) {
                         parameters[i] = Params[i].DefaultValue;
                     }
                 }
             }
-            
+            //invoke the method using the given parameters, if above requirements match
             Info.Invoke(null, parameters.ToArray());
         }
         
