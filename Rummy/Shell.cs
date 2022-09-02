@@ -9,6 +9,8 @@ namespace Rummy
     public class Shell
     {
         public int PlayerID;
+        
+        //method parameters which don't require to be input
         private static Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card) };
         
         
@@ -30,6 +32,9 @@ namespace Rummy
 
         public void StartTurn()
         {
+            
+            //the search script used
+            //TODO: search/autocomplete on method parameters
             PlayerInvokable[] Search(string input, bool exact)
             {
                 List<PlayerInvokable> output = new List<PlayerInvokable>();
@@ -37,15 +42,16 @@ namespace Rummy
                 for (int i = 0; i < query.Count(); i++)
                 {
                     string sample = "";
+                    //if "exact" switch is not set, only compares the length of the input 
                     if(!exact) {sample = query[i].Name.Remove(input.Length);}
                     if(exact)  {sample = query[i].Name;}
                     
+                    //if method (or its partial) name and input match, add it to output
                     if(input.ToLower() == sample.ToLower()){output.Add(query[i]);}
                 }
 
                 return output.ToArray();
             }
-            
             Console.Clear();
             Console.Write($"Player {PlayerID}, Round {Round}\n > ");
 
@@ -55,10 +61,12 @@ namespace Rummy
             while (run)
             {
                 ConsoleKeyInfo key = Console.ReadKey(true);
-                PlayerInvokable[] matches = null;
+                PlayerInvokable[] matches;
+                //checks if pressed key is one of the ones below
                 switch (key.Key)
                 {
                     case ConsoleKey.Backspace:
+                        //deletes last char of input, and rewrites it with a ' '(space) on the screen
                         if (Input.Count > 0)
                         {
                             Input.RemoveAt(Input.Count()-1);
@@ -68,6 +76,7 @@ namespace Rummy
                         }
                         break;
                     case ConsoleKey.Tab:
+                        //searches if there is a match to the input, if there is only one, autocompletes
                         matches = Search(Input.ToString(), false);
                         if (matches.Length == 1)
                         {
@@ -75,47 +84,73 @@ namespace Rummy
                             Console.CursorLeft = 2;
                             Console.Write(Input.ToArray().ToString());
                         }
+                        //TODO: output, for when there is more/less matches
                         break;
                     case ConsoleKey.Enter:
                         if(Input.Count() == 0) {break;}
                         
+                        //searches if there is (only) one exact mach for the given input, if there is, invokes it
+                        
+                        //splits up the string 
+                        //should not give back null, as it is checked for a few lines above
                         string[] splitInput = Input.ToArray().ToString().Split(' ');
                         string command = splitInput[0];
                         
                         List<string> b = splitInput.ToList();
+                        //removes first object in the split up input (the MethodName) -> leftover = parameters
                         b.RemoveAt(0);
                         string[] RawArgs = b.ToArray();
                         
-                        matches = Search(Input.ToString().Split(' ')[0], true);
+                        matches = Search(command, true);
                         if (matches.Length == 1)
                         {
                             Console.Write("\n");
-
+                            
+                            //makes reading a bit easier (otherwise unnecessary line)
                             PlayerInvokable match = matches[0];
+                            //---------------------------------
+                            
+                            //Creates an array with the length of the method(match)'s parameters 
                             object[] Args = new object[match.Params.Length];
                             for (int i = 0; i < RawArgs.Length; i++)
                             {
-                                ParameterInfo CP = match.Params[i];
                                 
-                                if(Array.IndexOf(AutoCompleteArgs, CP.ParameterType) == -1){Args[CP.Position] = Convert.ChangeType(RawArgs[i], CP.ParameterType);}
-                                else
+                                ParameterInfo CurrentParameter = match.Params[i];
+
+                                //if the parameter's type is in AutocompleteArgs, autocomplete  
+                                if (Array.IndexOf(AutoCompleteArgs, CurrentParameter.ParameterType) != -1)
                                 {
-                                    Type t = CP.ParameterType;
-                                    if(t == typeof(Deck))       {Args[CP.Position] = GameDeck;}
-                                    if(t == typeof(Hand))       {Args[CP.Position] = Hand;}
-                                    if(t == typeof(List<Card>)) {Args[CP.Position] = DiscardPile;}
-                                    if(t == typeof(Card))       {Args[CP.Position] = TrumpCard;}
+                                    Type t = CurrentParameter.ParameterType;
+                                    
+                                    //IMPORTANT!!!!:
+                                    //If you wish to add new autocompleted variables to the array above, DON'T forget to add functionality here!!
+                                    
+                                    //----------------------------!!---------------------------------------------
+                                    if(t == typeof(Deck))       {Args[CurrentParameter.Position] = GameDeck;}
+                                    if(t == typeof(Hand))       {Args[CurrentParameter.Position] = Hand;}
+                                    if(t == typeof(List<Card>)) {Args[CurrentParameter.Position] = DiscardPile;}
+                                    if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard;}
+                                    //----------------------------!!---------------------------------------------
                                 }
+                                else { Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[i], CurrentParameter.ParameterType); }
                                 
                             }
+                            //invokes the function
+                            //NOTICE: this might not work, as these functions are not static. Will be fixed in next commit (propably)
                             match.Invoke(Args.ToList());
+                            
+                            //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
                             if (match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
+                            
+                            //displays a new prompt, discards last input
+                            //TODO: command history
                             Console.Write("\n>");
                             Input = new List<char>();
                             
                         }
                         break;
                     default:
+                        //Adds key to the input
                         Input.Add(key.KeyChar);
                         Console.Write(key.KeyChar);
                         break;
