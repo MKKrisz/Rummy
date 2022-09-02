@@ -8,7 +8,7 @@ namespace Rummy
         private int suits = 4;             //Number of suits            (ex.: Spades, Hearts, Diamonds, Spears)
         private int values = 14;            //Number of different values  (ex.: A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Joker)
 
-        public int[,] Cards;
+        private int[,] Cards;
         public int CardsLeft => Enumerate();
 
         public Deck()
@@ -24,7 +24,7 @@ namespace Rummy
                 for (int x = 0; x < values; x++)
                 {
                     Cards[y, x] = 2;
-                    if (x == 0) { Cards[y, x] -= 1; }
+                    if (x == (int)Value.Joker) { Cards[y, x] -= 1; }
                 }
             }
         }
@@ -51,8 +51,6 @@ namespace Rummy
         public Card Draw(Random r)
         {
             if (CardsLeft <= 0) { return null;}
-
-            Card output;
             
             int suit = r.Next(suits);
             int value = r.Next(values);
@@ -64,9 +62,7 @@ namespace Rummy
             }
 
             Cards[suit, value]--;
-            output = new Card { Suit = (Suit)suit, Value = value };
-
-            return output;
+            return new Card { Suit = (Suit)suit, Value = value };;
         }
 
         public Card[] Deal(Random r, int amount = 14)
