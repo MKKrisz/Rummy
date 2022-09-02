@@ -40,7 +40,7 @@ namespace Rummy
                     if(!exact) {sample = query[i].Name.Remove(input.Length);}
                     if(exact)  {sample = query[i].Name;}
                     
-                    if(input == sample){output.Add(query[i]);}
+                    if(input.ToLower() == sample.ToLower()){output.Add(query[i]);}
                 }
 
                 return output.ToArray();
