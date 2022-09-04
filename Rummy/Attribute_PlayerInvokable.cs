@@ -10,6 +10,14 @@ namespace Rummy
 {
     public static class PlayerInvokableContainer
     {
+        //these types are allowed to have instance methods attributed with Attribute_PlayerInvokable
+        private static readonly Type[] instanceMethodWhitelist = new Type[] { typeof(Hand), typeof(Player) };
+        private static bool IsInstanceMethodAllowedForType(Type declarer) {
+            foreach(Type whitelistedType in instanceMethodWhitelist)
+                if(declarer == whitelistedType) return true;
+            return false;
+        }
+
         public static List<PlayerInvokable> Methods = new List<PlayerInvokable>();
         
 
@@ -34,8 +42,8 @@ namespace Rummy
             {
                 //Gets the attribute
                 PlayerInvokable p = infos[i].GetCustomAttribute<PlayerInvokable>();
-                if(infos[i].IsStatic == false)
-                    throw new Exception($"Method {infos[i].DeclaringType.FullName}.{infos[i].Name} is marked with {nameof(PlayerInvokable)}, but is not static.");
+                if(infos[i].IsStatic == false && IsInstanceMethodAllowedForType(infos[i].DeclaringType) == false)
+                    throw new Exception($"Method {infos[i].DeclaringType.FullName}.{infos[i].Name} is marked with {nameof(PlayerInvokable)}, but is not declared by a whitelisted type, or static.");
                 //sets attribute's MethodInfo field
                 p.Info = infos[i];
                 //sets attribute's parameters field
