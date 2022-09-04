@@ -35,7 +35,7 @@ namespace Rummy
                 //Gets the attribute
                 PlayerInvokable p = infos[i].GetCustomAttribute<PlayerInvokable>();
                 if(infos[i].IsStatic == false)
-                    throw new Exception($"Method {infos[i]} is marked with {nameof(PlayerInvokable)}, but is not static.");
+                    throw new Exception($"Method {infos[i].DeclaringType.FullName}.{infos[i].Name} is marked with {nameof(PlayerInvokable)}, but is not static.");
                 //sets attribute's MethodInfo field
                 p.Info = infos[i];
                 //sets attribute's parameters field
