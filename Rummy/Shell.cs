@@ -11,7 +11,7 @@ namespace Rummy
         public int PlayerID;
         
         //method parameters which don't require to be input
-        private static Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card) };
+        private static readonly Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card) };
         
         
         //references to all needed variables
@@ -77,12 +77,12 @@ namespace Rummy
                         break;
                     case ConsoleKey.Tab:
                         //searches if there is a match to the input, if there is only one, autocompletes
-                        matches = Search(Input.ToString(), false);
+                        matches = Search(new string(Input.ToArray()), false);
                         if (matches.Length == 1)
                         {
                             Input = matches[0].Name.ToCharArray().ToList();
                             Console.CursorLeft = 2;
-                            Console.Write(Input.ToArray().ToString());
+                            Console.Write(new string(Input.ToArray()));
                         }
                         //TODO: output, for when there is more/less matches
                         break;
@@ -93,7 +93,7 @@ namespace Rummy
                         
                         //splits up the string 
                         //should not give back null, as it is checked for a few lines above
-                        string[] splitInput = Input.ToArray().ToString().Split(' ');
+                        string[] splitInput = new string(Input.ToArray()).Split(' ');
                         string command = splitInput[0];
                         
                         List<string> b = splitInput.ToList();
@@ -136,7 +136,7 @@ namespace Rummy
                                 
                             }
                             //invokes the function
-                            //NOTICE: this might not work, as these functions are not static. Will be fixed in next commit (propably)
+                            //NOTICE: this might not work, as these functions are not static. Will be fixed in next commit (probably) Note: I added a check in Attribute_PlayerInvokable.cs that throws an exception if the attribute is placed on a non-static method.
                             match.Invoke(Args.ToList());
                             
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
@@ -145,7 +145,7 @@ namespace Rummy
                             //displays a new prompt, discards last input
                             //TODO: command history
                             Console.Write("\n>");
-                            Input = new List<char>();
+                            Input.Clear();
                             
                         }
                         break;

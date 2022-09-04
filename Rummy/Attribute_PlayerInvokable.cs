@@ -13,6 +13,12 @@ namespace Rummy
         public static List<PlayerInvokable> Methods = new List<PlayerInvokable>();
         
 
+        /* SUGGESTION: Call Init() in static constructor
+        static PlayerInvokableContainer()
+        {
+            Init();
+        }*/
+
         public static void Init()
         {
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -28,6 +34,8 @@ namespace Rummy
             {
                 //Gets the attribute
                 PlayerInvokable p = infos[i].GetCustomAttribute<PlayerInvokable>();
+                if(infos[i].IsStatic == false)
+                    throw new Exception($"Method {infos[i]} is marked with {nameof(PlayerInvokable)}, but is not static.");
                 //sets attribute's MethodInfo field
                 p.Info = infos[i];
                 //sets attribute's parameters field
