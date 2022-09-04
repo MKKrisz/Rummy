@@ -11,7 +11,7 @@ namespace Rummy
     public static class PlayerInvokableContainer
     {
         //these types are allowed to have instance methods attributed with Attribute_PlayerInvokable
-        private static readonly Type[] instanceMethodWhitelist = new Type[] { typeof(Hand), typeof(Player) };
+        private static readonly Type[] instanceMethodWhitelist = new Type[] { typeof(Hand)/*, typeof(Player) Shell doesn't have a reference to the current player, so not adding Player to the whitelist... */ };
         private static bool IsInstanceMethodAllowedForType(Type declarer) {
             foreach(Type whitelistedType in instanceMethodWhitelist)
                 if(declarer == whitelistedType) return true;
@@ -66,7 +66,7 @@ namespace Rummy
         public ParameterInfo[] Params;
         
         public PlayerInvokable(){}
-        public void Invoke(List<Object> parameters) {
+        public void Invoke(List<Object> parameters, object instance = null) {
             //if more parameters are given, return
             if (parameters.Count > Params.Length) { return;}
             
@@ -90,7 +90,7 @@ namespace Rummy
                 }
             }
             //invoke the method using the given parameters, if above requirements match
-            Info.Invoke(null, parameters.ToArray());
+            Info.Invoke(instance, parameters.ToArray());
         }
         
 
