@@ -43,8 +43,12 @@ namespace Rummy
                 {
                     string sample = "";
                     //if "exact" switch is not set, only compares the length of the input 
-                    if(!exact) {sample = query[i].Name.Remove(input.Length);}
-                    if(exact)  {sample = query[i].Name;}
+                    if (!exact)
+                    {
+                        try   {sample = query[i].Name.Remove(input.Length);}
+                        catch {sample = query[i].Name;}
+                    }
+                    if(exact) {sample = query[i].Name;}
                     
                     //if method (or its partial) name and input match, add it to output
                     if(input.ToLower() == sample.ToLower()){output.Add(query[i]);}
@@ -53,7 +57,9 @@ namespace Rummy
                 return output.ToArray();
             }
             Console.Clear();
-            Console.Write($"Player {PlayerID}, Round {Round}\n> ");
+            Console.Write($"Player {PlayerID}, Round {Round}\n");
+            Hand.List();
+            Console.Write("\n> ");
 
             List<char> Input = new List<char>();
             
@@ -133,7 +139,14 @@ namespace Rummy
                                     if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard;}
                                     //----------------------------!!---------------------------------------------
                                 }
-                                else { if(RawArgs.Length > j && RawArgs[j] != null) Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[j], CurrentParameter.ParameterType); j++;}
+                                else
+                                {
+                                    if (RawArgs.Length > j && RawArgs[j] != null)
+                                    {
+                                        if (CurrentParameter.ParameterType.IsEnum) { Args[CurrentParameter.Position] = Enum.Parse(CurrentParameter.ParameterType, RawArgs[j], true);}
+                                        else {Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[j], CurrentParameter.ParameterType); j++;}
+                                    }
+                                }
                                 
                             }
                             //invokes the function
