@@ -1,10 +1,7 @@
 using System;
 using System.Reflection;
-using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Rummy
 {
@@ -76,7 +73,7 @@ namespace Rummy
                     if (i >= parameters.Count) { parameters.Add(Params[i].DefaultValue);}
                     
                     //if there is a type mismatch, use default parameter
-                    if (Params[i].ParameterType != parameters[i].GetType()) {
+                    if (parameters[i] == null || Params[i].ParameterType != parameters[i].GetType()) {
                         parameters[i] = Params[i].DefaultValue;
                     }
                 }
