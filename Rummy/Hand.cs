@@ -21,8 +21,8 @@ namespace Rummy
         [PlayerInvokable(Name = "Sort", Description = "Sorts the hand based on input (0/Suit, 1/Value, 2/Both)")]
         public static void Sort(Hand H, SortType T = SortType.Value)
         {
-            Card[] buffer = H.Cards.ToArray();
-            if (T == SortType.Suit || T == SortType.Both)
+            Card[] buffer = Cards.ToArray();
+            if (T == SortType.suit || T == SortType.both)
             {
                 Array.Sort(buffer, new CardSuitComparer());
             }
@@ -31,7 +31,7 @@ namespace Rummy
                 Array.Sort(buffer, new CardValueComparer());
             }
 
-            H.Cards = buffer.ToList();
+            Cards = buffer.ToList();
         }
         class CardValueComparer : IComparer<Card>
         {
@@ -53,9 +53,9 @@ namespace Rummy
         }
 
         [PlayerInvokable(Name = "Switch", Description = "Switches two cards in the hand (useful for manual sorting)")]
-        public static void Switch(Hand H, int a, int b)
+        public void Switch(int a, int b)
         {
-            if (a > H.Cards.Count || b > H.Cards.Count)
+            if (a > Cards.Count || b > Cards.Count)
             {
                 Console.Write("Error: one index is out of range");
                 return;
@@ -66,25 +66,29 @@ namespace Rummy
                 return;
             }
 
-            Card buffer = H.Cards[a].Copy();
-            H.Cards[a] = H.Cards[b];
-            H.Cards[b] = buffer;
+            Card buffer = Cards[a].Copy();
+            Cards[a] = Cards[b];
+            Cards[b] = buffer;
         }
         
         [PlayerInvokable(Name = "Discard", Description = "Discards a card, and thus ends the turn")]
         [TurnEnder]
-        public static void Discard(Hand H, List<Card> DiscardPile, int id)
+        public void Discard(List<Card> DiscardPile, int id)
         {
-            DiscardPile.Add(H.Cards[id]);
-            H.Cards.RemoveAt(id);
+            DiscardPile.Add(Cards[id]);
+            Cards.RemoveAt(id);
         }
 
         [PlayerInvokable(Name = "List", Description = "Lists the player's cards")]
-        public static void List(Hand H)
+        public void List(bool horizontal = true)
         {
-            for (int i = 0; i < H.Cards.Count; i++)
+            for (int i = 0; i < Cards.Count; i++)
             {
-                Console.WriteLine($"{i}:\t{Program.Suit[(int)H.Cards[i].Suit]}{Program.Value[H.Cards[i].Value]}");
+                if(!horizontal) Console.WriteLine($"{i}:\t{Program.Suit[(int)Cards[i].Suit]}{Program.Value[Cards[i].Value]}");
+                if (horizontal)
+                {
+                    Console.Write($"{Program.Suit[(int)Cards[i].Suit]}{Program.Value[Cards[i].Value]} ");
+                }
             }
         }
     }
