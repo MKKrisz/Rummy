@@ -19,10 +19,10 @@ namespace Rummy
         
         public enum SortType{Suit = 0, Value = 1, Both = 2}
         [PlayerInvokable(Name = "Sort", Description = "Sorts the hand based on input (0/Suit, 1/Value, 2/Both)")]
-        public static void Sort(Hand H, SortType T = SortType.Value)
+        public void Sort(SortType T = SortType.Value)
         {
             Card[] buffer = Cards.ToArray();
-            if (T == SortType.suit || T == SortType.both)
+            if (T == SortType.Suit || T == SortType.Both)
             {
                 Array.Sort(buffer, new CardSuitComparer());
             }
@@ -33,7 +33,7 @@ namespace Rummy
 
             Cards = buffer.ToList();
         }
-        class CardValueComparer : IComparer<Card>
+        public class CardValueComparer : IComparer<Card>
         {
             public int Compare(Card x, Card y)
             {
@@ -44,7 +44,7 @@ namespace Rummy
             }
         }
 
-        class CardSuitComparer : IComparer<Card>
+        public class CardSuitComparer : IComparer<Card>
         {
             public int Compare(Card x, Card y)
             {
@@ -90,6 +90,7 @@ namespace Rummy
                     Console.Write($"{Program.Suit[(int)Cards[i].Suit]}{Program.Value[Cards[i].Value]} ");
                 }
             }
+            if(horizontal){Console.Write("\n");}
         }
     }
 
