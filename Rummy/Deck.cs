@@ -5,68 +5,92 @@ namespace Rummy
 {
     public class Deck                       //an object that generates random cards the same way you pull cards from a deck
     {
-        private int suits = 4;             //Number of suits            (ex.: Spades, Hearts, Diamonds, Spears)
+        const int SUIT_COUNT = 4;
         private int values = 14;            //Number of different values  (ex.: A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Joker)
 
-        private int[,] Cards;
-        public int CardsLeft => Enumerate();
+        //private int[,] Cards; // Kept commented here as a source of shame
+        private readonly List<Card> cards = new List<Card>();
+        public int CardsLeft => cards.Count;
 
         public Deck()
         {
-            Cards = new int[suits, values];
             Populate();
+        }
+
+        /// Adds a card onto the top of the stack, so that it will be the next card drawn.
+        public void PushCard(Card card) => cards.Add(card);
+        /// Inserts a card so that it occupies the specified index. Invalid index values are clamped.
+        public void InsertCard(int index, Card card)
+        {
+            if(index < 0) index = 0;
+            else if(index >= CardsLeft) index = CardsLeft;
+            cards.Insert(index, card);
+        }
+
+        /// Adds several cards onto the top of the stack, so that the last card added will be the first one drawn.
+        public void PushCards(IEnumerable<Card> collection)
+        {
+            foreach(Card card in collection) PushCard(card);
+        }
+
+        /// Adds a card onto the bottom of the stack, so that it will be the last card drawn.
+        public void AddCard(Card card) => InsertCard(0, card);
+
+        /// Adds several cards onto the bottom of the stack, so that the last card added will be the last one drawn.
+        public void AddCards(IEnumerable<Card> collection)
+        {
+            foreach(Card card in collection) AddCard(card);
+        }
+
+        public Card PopCard() => CardsLeft > 0 ? RemoveCard(CardsLeft - 1) : null;
+        public Card RemoveCard(int index)
+        {
+            if(CardsLeft == 0)
+                return null;
+            else
+            {
+                Card card = cards[index];
+                return card;
+            }
         }
 
         public void Populate()
         {
-            for (int y = 0; y < suits; y++)
+            for (int s = 0; s < SUIT_COUNT; s++)
             {
-                for (int x = 0; x < values; x++)
+                for (int v = 0; v < values; v++)
                 {
-                    Cards[y, x] = 2;
-                    if (x == (int)Value.Joker) { Cards[y, x] -= 1; }
+                    Card card = new Card((Suit)s, v);
+                    // Regular cards added twice; Joker only once.
+                    PushCard(card);
+                    if (v != (int)Value.Joker) { PushCard(card.Copy()); }
                 }
             }
         }
+
+        [Obsolete("Use AddRange or PushRange instead.", error: !true)]
         public void Repopulate(List<Card> newCards)            //Function to essentially re-shuffle the throw deck, for an extended play (consumes the contents of the list)
         {
             while (newCards.Count > 0)
             {
-                Cards[(int)newCards[0].Suit, newCards[0].Value]++;
+                cards.Add(newCards[0].Copy());
+                //Cards[(int)newCards[0].Suit, newCards[0].Value]++;
                 newCards.RemoveAt(0); 
             }
         }
-        private int Enumerate()
-        {
-            int output = 0;
-            for (int y = 0; y < suits; y++)
-            {
-                for (int x = 0; x < values; x++)
-                {
-                    output += Cards[y, x];
-                }
-            }
-            return output;
-        }
-        public Card Draw(Random r)
-        {
-            if (CardsLeft <= 0) { return null;}
-            
-            int suit = r.Next(suits);
-            int value = r.Next(values);
 
-            while (Cards[suit, value] <= 0)
-            {
-                suit = r.Next(suits);
-                value = r.Next(values);
-            }
+        /// Draws a card from the deck, removing it. If a Random is not provided, the topmost (last) card will be drawn. Essentially a fusion of RemoveCard and PopCard.
+        public Card Draw(Random r = null)
+        {
+            if(CardsLeft == 0) return null;
 
-            Cards[suit, value]--;
-            return new Card { Suit = (Suit)suit, Value = value };;
+            return (r == null) ? PopCard() : RemoveCard(r.Next(CardsLeft));
         }
 
+        /// Draws at most <param name="amount"/> cards. If there aren't enough, the returned array will be shorter.
         public Card[] Deal(Random r, int amount = 14)
         {
+            amount = Math.Min(amount, CardsLeft);
             Card[] output = new Card[amount];
             for (int i = 0; i < amount; i++)
             {
