@@ -12,9 +12,12 @@ namespace Rummy
         private readonly List<Card> cards = new List<Card>();
         public int CardsLeft => cards.Count;
 
+        private static readonly Random shuffler = new Random();
+
         public Deck()
         {
             Populate();
+            Shuffle();
         }
 
         /// Adds a card onto the top of the stack, so that it will be the next card drawn.
@@ -98,6 +101,24 @@ namespace Rummy
             }
 
             return output;
+        }
+
+        /// Randomizes the order of cards within this deck.
+        public void Shuffle(Random rand = null)
+        {
+            if(rand == null)
+                rand = shuffler;
+
+            void swap(int i, int j) {
+                Card temp = cards[i];
+                cards[i] = cards[j];
+                cards[j] = temp;
+            }
+
+            for(int i = 0; i < cards.Count - 1; i++)
+            {
+                swap(i, rand.Next(i + 1, cards.Count));
+            }
         }
     }
 }
