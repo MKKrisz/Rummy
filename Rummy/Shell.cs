@@ -16,7 +16,7 @@ namespace Rummy
         
         //references to all needed variables
         private Hand Hand;                                          //reference to the player's hand
-
+        private Player Player;
         int Round => Program.Game.Round;
         Deck GameDeck => Program.Game.Deck;                         //reference to the game deck
         List<Card> DiscardPile => Program.Game.DiscardPile;         //reference to the discard pile, for picking it up, or for ending the turn
@@ -28,6 +28,7 @@ namespace Rummy
         {
             PlayerID = P.ID;
             Hand = P.Hand;
+            Player = P;
         }
 
         public void StartTurn()
@@ -59,7 +60,7 @@ namespace Rummy
             Console.Clear();
             Console.Write($"Player {PlayerID}, Round {Round}\n");
             Hand.List();
-            Console.Write("\n> ");
+            Console.Write("> ");
 
             List<char> Input = new List<char>();
             
