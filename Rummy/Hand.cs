@@ -19,30 +19,19 @@ namespace Rummy
         
         public enum SortType{Suit = 0, Value = 1, Both = 2}
         [PlayerInvokable(Name = "Sort", Description = "Sorts the hand based on input (0/Suit, 1/Value, 2/Both)")]
-        public void Sort(SortType T)
+        public static void Sort(Hand H, SortType T = SortType.Value)
         {
+            Card[] buffer = H.Cards.ToArray();
             if (T == SortType.Suit || T == SortType.Both)
             {
-                List<Card> buffer = new List<Card>();
-                int[] lastOfSuits = new int[4];
-                for (int i = 0; i < Cards.Count; i++)
-                {
-                    Card card = Cards[i];
-                    int suit = (int)card.Suit;
-                    buffer[lastOfSuits[suit]] = card;
-                    for (int j = suit; j < 4; j++)
-                    {
-                        lastOfSuits[j]++;
-                    }
-                }
-                Cards = buffer;
+                Array.Sort(buffer, new CardSuitComparer());
             }
-
             if (T == SortType.Value || T == SortType.Both)
             {
-                Card[] buffer = Cards.ToArray();
                 Array.Sort(buffer, new CardValueComparer());
             }
+
+            H.Cards = buffer.ToList();
         }
         class CardValueComparer : IComparer<Card>
         {
@@ -55,10 +44,18 @@ namespace Rummy
             }
         }
 
-        [PlayerInvokable(Name = "Switch", Description = "Switches two cards in the hand (useful for manual sorting)")]
-        public void Switch(int a, int b)
+        class CardSuitComparer : IComparer<Card>
         {
-            if (a > Cards.Count || b > Cards.Count)
+            public int Compare(Card x, Card y)
+            {
+                return (int)x.Suit - (int)y.Suit;
+            }
+        }
+
+        [PlayerInvokable(Name = "Switch", Description = "Switches two cards in the hand (useful for manual sorting)")]
+        public static void Switch(Hand H, int a, int b)
+        {
+            if (a > H.Cards.Count || b > H.Cards.Count)
             {
                 Console.Write("Error: one index is out of range");
                 return;
@@ -69,11 +66,27 @@ namespace Rummy
                 return;
             }
 
-            Card buffer = Cards[a].Copy();
-            Cards[b] = Cards[a];
+            Card buffer = H.Cards[a].Copy();
+            H.Cards[a] = H.Cards[b];
+            H.Cards[b] = buffer;
         }
         
-        
+        [PlayerInvokable(Name = "Discard", Description = "Discards a card, and thus ends the turn")]
+        [TurnEnder]
+        public static void Discard(Hand H, List<Card> DiscardPile, int id)
+        {
+            DiscardPile.Add(H.Cards[id]);
+            H.Cards.RemoveAt(id);
+        }
+
+        [PlayerInvokable(Name = "List", Description = "Lists the player's cards")]
+        public static void List(Hand H)
+        {
+            for (int i = 0; i < H.Cards.Count; i++)
+            {
+                Console.WriteLine($"{i}:\t{Program.Suit[(int)H.Cards[i].Suit]}{Program.Value[H.Cards[i].Value]}");
+            }
+        }
     }
 
     
