@@ -53,7 +53,7 @@ namespace Rummy
                 return output.ToArray();
             }
             Console.Clear();
-            Console.Write($"Player {PlayerID}, Round {Round}\n > ");
+            Console.Write($"Player {PlayerID}, Round {Round}\n> ");
 
             List<char> Input = new List<char>();
             
@@ -112,7 +112,8 @@ namespace Rummy
                             
                             //Creates an array with the length of the method(match)'s parameters 
                             object[] Args = new object[match.Params.Length];
-                            for (int i = 0; i < RawArgs.Length; i++)
+                            int j = 0;
+                            for (int i = 0; i < Args.Length; i++)
                             {
                                 
                                 ParameterInfo CurrentParameter = match.Params[i];
@@ -132,7 +133,7 @@ namespace Rummy
                                     if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard;}
                                     //----------------------------!!---------------------------------------------
                                 }
-                                else { Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[i], CurrentParameter.ParameterType); }
+                                else { if(RawArgs.Length > j && RawArgs[j] != null) Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[j], CurrentParameter.ParameterType); j++;}
                                 
                             }
                             //invokes the function
@@ -144,7 +145,7 @@ namespace Rummy
                             
                             //displays a new prompt, discards last input
                             //TODO: command history
-                            Console.Write("\n>");
+                            Console.Write("> ");
                             Input.Clear();
                             
                         }
