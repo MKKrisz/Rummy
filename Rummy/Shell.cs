@@ -138,7 +138,11 @@ namespace Rummy
                             }
                             //invokes the function
                             //NOTICE: this might not work, as these functions are not static. Will be fixed in next commit (probably) Note: I added a check in Attribute_PlayerInvokable.cs that throws an exception if the attribute is placed on a non-static method.
-                            match.Invoke(Args.ToList());
+                            //Note2: Also added a whitelist for types allowed to have instance method commands.
+
+                            // Test for (optimally) each type contained in PlayerInvokableContainer.instanceMethodWhitelist, and provide an appropriate object instance. Otherwise: Method assumed to be static, instance is null.
+                            if(match.Info.DeclaringType == typeof(Hand)) match.Invoke(Args.ToList(), instance: Hand);
+                            else match.Invoke(Args.ToList());
                             
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
                             if (match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
