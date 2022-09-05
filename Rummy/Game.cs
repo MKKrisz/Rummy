@@ -24,6 +24,10 @@ namespace Rummy
             }
         }
         public Card GetLastDiscard(){return DiscardPile[DiscardPile.Count()-1];}
-        
+
+        public void Loop()
+        {
+            Players[0].SH.StartTurn();
+        }
     }
 }
