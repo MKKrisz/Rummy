@@ -1,3 +1,5 @@
+using System;
+
 namespace Rummy
 {
     public enum Suit{Spades = 0, Hearts = 1, Diamonds = 3, Clubs = 2}
@@ -21,6 +23,19 @@ namespace Rummy
             if (Value == 1 ) { return 10; }
 
             return Value;
+        }
+
+        public static Card[] Sort(Card[] input, Hand.SortType T)
+        {
+            if (T == Hand.SortType.Suit || T == Hand.SortType.Both)
+            {
+                Array.Sort(input, new Hand.CardSuitComparer());
+            }
+            if (T == Hand.SortType.Value || T == Hand.SortType.Both)
+            {
+                Array.Sort(input, new Hand.CardValueComparer());
+            }
+            return input;
         }
     }
 }
