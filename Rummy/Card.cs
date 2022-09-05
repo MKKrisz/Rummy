@@ -12,6 +12,14 @@ namespace Rummy
 
         public int PointValue => GetValue();
 
+        public Card(Suit suit, int val)
+        {
+            if(val < 0 || val > (int)Rummy.Value.King)
+                throw new ArgumentOutOfRangeException(nameof(val));
+            Suit = suit;
+            Value = val;
+        }
+
         public Card Copy()
         {
             Card cp = (Card)this.MemberwiseClone();
@@ -19,8 +27,7 @@ namespace Rummy
         }
         private int GetValue()
         {
-            if (Value >  10) { return 10; }
-            if (Value == 1 ) { return 10; }
+            if (Value >  10 || Value == 1) { return 10; }
 
             return Value;
         }
