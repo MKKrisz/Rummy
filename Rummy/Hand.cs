@@ -7,14 +7,14 @@ namespace Rummy
 {
     public class Hand
     {
-        public List<Card> Cards;
+        public readonly List<Card> Cards = new List<Card>();
         public int PlayerID;
 
         public Hand(Random r, Deck deck, bool firstPlayer, int playerId)
         {
             PlayerID = playerId;
-            if (firstPlayer) { Cards = deck.Deal(r, 15).ToList(); }
-            else             { Cards = deck.Deal(r).ToList();}
+            if (firstPlayer) { Cards.AddRange(deck.Deal(r, 15)); }
+            else             { Cards.AddRange(deck.Deal(r));}
         }
         
         public enum SortType{Suit = 0, Value = 1, Both = 2}
@@ -31,7 +31,8 @@ namespace Rummy
                 Array.Sort(buffer, new CardValueComparer());
             }
 
-            Cards = buffer.ToList();
+            Cards.Clear();
+            Cards.AddRange(buffer);
         }
         public class CardValueComparer : IComparer<Card>
         {
