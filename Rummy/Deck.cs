@@ -12,7 +12,7 @@ namespace Rummy
         private readonly List<Card> cards = new List<Card>();
         public int CardsLeft => cards.Count;
 
-        private static readonly Random shuffler = new Random();
+        private static readonly Random shuffler = Program.r;
 
         public Deck()
         {
@@ -48,14 +48,11 @@ namespace Rummy
         public Card PopCard() => CardsLeft > 0 ? RemoveCard(CardsLeft - 1) : null;
         public Card RemoveCard(int index)
         {
-            if(CardsLeft == 0)
-                return null;
-            else
-            {
-                Card card = cards[index];
-                return card;
+            if(CardsLeft == 0) return null;
+            Card card = cards[index];
+            cards.RemoveAt(index);
+            return card;
             }
-        }
 
         public void Populate()
         {
@@ -109,15 +106,15 @@ namespace Rummy
             if(rand == null)
                 rand = shuffler;
 
-            void swap(int i, int j) {
-                Card temp = cards[i];
+            void Swap(int i, int j) {
+                Card temp = cards[i].Copy();
                 cards[i] = cards[j];
                 cards[j] = temp;
             }
 
             for(int i = 0; i < cards.Count - 1; i++)
             {
-                swap(i, rand.Next(i + 1, cards.Count));
+                Swap(i, rand.Next(i + 1, cards.Count));
             }
         }
     }
