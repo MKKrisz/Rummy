@@ -8,7 +8,7 @@ namespace Rummy
     public static class PlayerInvokableContainer
     {
         //these types are allowed to have instance methods attributed with Attribute_PlayerInvokable
-        private static readonly Type[] instanceMethodWhitelist = new Type[] { typeof(Hand)/*, typeof(Player) Shell doesn't have a reference to the current player, so not adding Player to the whitelist... */ };
+        private static readonly Type[] instanceMethodWhitelist = new Type[] { typeof(Hand), typeof(Shell)/*, typeof(Player) Shell doesn't have a reference to the current player, so not adding Player to the whitelist... */ };
         private static bool IsInstanceMethodAllowedForType(Type declarer) {
             foreach(Type whitelistedType in instanceMethodWhitelist)
                 if(declarer == whitelistedType) return true;
@@ -18,11 +18,11 @@ namespace Rummy
         public static List<PlayerInvokable> Methods = new List<PlayerInvokable>();
         
 
-        /* SUGGESTION: Call Init() in static constructor
+        //SUGGESTION: Call Init() in static constructor
         static PlayerInvokableContainer()
         {
             Init();
-        }*/
+        }
 
         public static void Init()
         {
