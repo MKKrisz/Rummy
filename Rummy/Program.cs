@@ -12,7 +12,6 @@ namespace Rummy
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            PlayerInvokableContainer.Init();
             Game = new Game(1);
             Game.Loop();
         }
