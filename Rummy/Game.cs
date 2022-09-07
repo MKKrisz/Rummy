@@ -9,6 +9,7 @@ namespace Rummy
         public Deck Deck;
         public Card TrumpCard;
         public List<Card> DiscardPile = new List<Card>();
+        public List<Meld> Melds = new List<Meld>();
 
         public int Round;
 
