@@ -11,7 +11,7 @@ namespace Rummy
         public int PlayerID;
         
         //method parameters which don't require to be input
-        private static readonly Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card) };
+        private static readonly Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card), typeof(List<Meld>)};
         
         
         //references to all needed variables
@@ -21,9 +21,9 @@ namespace Rummy
         Deck GameDeck => Program.Game.Deck;                         //reference to the game deck
         List<Card> DiscardPile => Program.Game.DiscardPile;         //reference to the discard pile, for picking it up, or for ending the turn
         Card TrumpCard => Program.Game.TrumpCard;
-        //TODO:A tercek/lepakolt lapok tárolója
-        
-        
+        private List<Meld> Melds => Program.Game.Melds;
+
+
         public Shell(Player P)
         {
             PlayerID = P.ID;
@@ -56,6 +56,10 @@ namespace Rummy
                 }
 
                 return output.ToArray();
+            }
+            static bool IsParams(ParameterInfo param)
+            {
+                return param.GetCustomAttributes(typeof (ParamArrayAttribute), false).Length > 0;
             }
             Console.Clear();
             Console.Write($"Player {PlayerID}, Round {Round}\n");
@@ -138,13 +142,27 @@ namespace Rummy
                                     if(t == typeof(Hand))       {Args[CurrentParameter.Position] = Hand;}
                                     if(t == typeof(List<Card>)) {Args[CurrentParameter.Position] = DiscardPile;}
                                     if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard;}
+                                    if(t == typeof(List<Meld>)) {Args[CurrentParameter.Position] = Melds;}
                                     //----------------------------!!---------------------------------------------
                                 }
                                 else
                                 {
+                                    if (IsParams(CurrentParameter))
+                                    {
+                                        //TODO: global params [] parameter conversion 
+                                        Type T = CurrentParameter.ParameterType.GetElementType();
+                                        List<object> list = new List<object>();
+                                        for (int k = j; k < RawArgs.Length; k++)
+                                        {
+                                            list.Add(Convert.ChangeType(RawArgs[k], T));
+                                        }
+                                        Args[CurrentParameter.Position] = list.ToArray();
+                                        j = RawArgs.Length;
+                                    }
+
                                     if (RawArgs.Length > j && RawArgs[j] != null)
                                     {
-                                        if (CurrentParameter.ParameterType.IsEnum) { Args[CurrentParameter.Position] = Enum.Parse(CurrentParameter.ParameterType, RawArgs[j], true);}
+                                        if (CurrentParameter.ParameterType.IsEnum) { Args[CurrentParameter.Position] = Enum.Parse(CurrentParameter.ParameterType, RawArgs[j], true); j++;}
                                         else {Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[j], CurrentParameter.ParameterType); j++;}
                                     }
                                 }
@@ -155,7 +173,8 @@ namespace Rummy
                             //Note2: Also added a whitelist for types allowed to have instance method commands.
 
                             // Test for (optimally) each type contained in PlayerInvokableContainer.instanceMethodWhitelist, and provide an appropriate object instance. Otherwise: Method assumed to be static, instance is null.
-                            if(match.Info.DeclaringType == typeof(Hand)) match.Invoke(Args.ToList(), instance: Hand);
+                            if(match.Info.DeclaringType == typeof(Hand))  match.Invoke(Args.ToList(), instance: Hand);
+                            else if(match.Info.DeclaringType == typeof(Shell)) match.Invoke(Args.ToList(), instance: this);
                             else match.Invoke(Args.ToList());
                             
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
@@ -174,6 +193,15 @@ namespace Rummy
                         Console.Write(key.KeyChar);
                         break;
                 }
+            }
+        }
+
+        [PlayerInvokable(Name = "Help", Description = "Displays this message")]
+        public void Help()
+        {
+            for (int i = 0; i < PlayerInvokableContainer.Methods.Count; i++)
+            {
+                Console.WriteLine($"{PlayerInvokableContainer.Methods[i].Name}\t\t{PlayerInvokableContainer.Methods[i].Description}");
             }
         }
     }
