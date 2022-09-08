@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using TextColor;
 
 namespace Rummy
 {
@@ -31,32 +32,31 @@ namespace Rummy
             Player = P;
         }
 
+        //the search script used
+        //TODO: search/autocomplete on method parameters
+        PlayerInvokable[] Search(string input, bool exact)
+        {
+            List<PlayerInvokable> output = new List<PlayerInvokable>();
+            List<PlayerInvokable> query = PlayerInvokableContainer.Methods;
+            for (int i = 0; i < query.Count(); i++)
+            {
+                string sample = "";
+                //if "exact" switch is not set, only compares the length of the input 
+                if (!exact)
+                {
+                    try   {sample = query[i].Name.Remove(input.Length);}
+                    catch {sample = query[i].Name;}
+                }
+                if(exact) {sample = query[i].Name;}
+                    
+                //if method (or its partial) name and input match, add it to output
+                if(input.ToLower() == sample.ToLower()){output.Add(query[i]);}
+            }
+
+            return output.ToArray();
+        }
         public void StartTurn()
         {
-            
-            //the search script used
-            //TODO: search/autocomplete on method parameters
-            PlayerInvokable[] Search(string input, bool exact)
-            {
-                List<PlayerInvokable> output = new List<PlayerInvokable>();
-                List<PlayerInvokable> query = PlayerInvokableContainer.Methods;
-                for (int i = 0; i < query.Count(); i++)
-                {
-                    string sample = "";
-                    //if "exact" switch is not set, only compares the length of the input 
-                    if (!exact)
-                    {
-                        try   {sample = query[i].Name.Remove(input.Length);}
-                        catch {sample = query[i].Name;}
-                    }
-                    if(exact) {sample = query[i].Name;}
-                    
-                    //if method (or its partial) name and input match, add it to output
-                    if(input.ToLower() == sample.ToLower()){output.Add(query[i]);}
-                }
-
-                return output.ToArray();
-            }
             static bool IsParams(ParameterInfo param)
             {
                 return param.GetCustomAttributes(typeof (ParamArrayAttribute), false).Length > 0;
@@ -162,8 +162,11 @@ namespace Rummy
 
                                     if (RawArgs.Length > j && RawArgs[j] != null)
                                     {
-                                        if (CurrentParameter.ParameterType.IsEnum) { Args[CurrentParameter.Position] = Enum.Parse(CurrentParameter.ParameterType, RawArgs[j], true); j++;}
-                                        else {Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[j], CurrentParameter.ParameterType); j++;}
+                                        try{
+                                            if (CurrentParameter.ParameterType.IsEnum) { Args[CurrentParameter.Position] = Enum.Parse(CurrentParameter.ParameterType, RawArgs[j], true); j++;}
+                                            else {Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[j], CurrentParameter.ParameterType); j++;}
+                                        }
+                                        catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
                                     }
                                 }
                                 
@@ -173,10 +176,12 @@ namespace Rummy
                             //Note2: Also added a whitelist for types allowed to have instance method commands.
 
                             // Test for (optimally) each type contained in PlayerInvokableContainer.instanceMethodWhitelist, and provide an appropriate object instance. Otherwise: Method assumed to be static, instance is null.
-                            if(match.Info.DeclaringType == typeof(Hand))  match.Invoke(Args.ToList(), instance: Hand);
-                            else if(match.Info.DeclaringType == typeof(Shell)) match.Invoke(Args.ToList(), instance: this);
-                            else match.Invoke(Args.ToList());
-                            
+                            try{
+                                if(match.Info.DeclaringType == typeof(Hand))  match.Invoke(Args.ToList(), instance: Hand);
+                                else if(match.Info.DeclaringType == typeof(Shell)) match.Invoke(Args.ToList(), instance: this);
+                                else match.Invoke(Args.ToList());
+                            }
+                            catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
                             if (match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
                             
@@ -197,12 +202,38 @@ namespace Rummy
         }
 
         [PlayerInvokable(Name = "Help", Description = "Displays this message")]
-        public void Help()
+        public void Help(string s = null)
         {
-            for (int i = 0; i < PlayerInvokableContainer.Methods.Count; i++)
+            bool success = false;
+            if (s != null)
             {
-                Console.WriteLine($"{PlayerInvokableContainer.Methods[i].Name}\t\t{PlayerInvokableContainer.Methods[i].Description}");
+                PlayerInvokable[] matches = Search(s, exact: true);
+                if (matches.Length == 1)
+                {
+                    success = true;
+                    PlayerInvokable match = matches[0];
+                    Console.WriteLine($"{match.Name}:\t{match.Description}");
+                    if(match.Params.Length != 0){Console.WriteLine("Parameters:");}
+                    for (int i = 0; i < match.Params.Length; i++)
+                    {
+                        Console.Write($"{i}:\t");
+                        if(match.Params[i].GetCustomAttributes().OfType<AutoCompleteParameter>().Any()){Console.Write($"{Colors.Ignorable.AnsiFGCode}m(AutoCompleted) ");}
+                        Console.Write($"{match.Params[i].Name}\t{match.Params[i].ParameterType}\u001b[m");
+                        Console.Write("\n");
+                    }
+                }
+                else Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: No method named {Colors.Important.AnsiFGCode}\"{s}\" {Colors.Warning.AnsiFGCode}was found, or the input wasn't the exact name{Color.Reset}");
+            }
+            if(!success)
+            {
+                for (int i = 0; i < PlayerInvokableContainer.Methods.Count; i++)
+                {
+                    Console.WriteLine($"{PlayerInvokableContainer.Methods[i].Name}\t\t{PlayerInvokableContainer.Methods[i].Description}");
+                }
             }
         }
+
+        [PlayerInvokable(Name = "Clear", Description = "Clears the console")]
+        public void Clear() => Console.Clear(); 
     }
 }
