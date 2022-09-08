@@ -1,4 +1,5 @@
 ﻿using System;
+using TextColor;
 
 namespace Rummy
 {
@@ -12,8 +13,21 @@ namespace Rummy
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Game = new Game(1);
-            Game.Loop();
+            bool run = true;
+            while (run)
+            {
+                Console.Write("How Many Players?\n> ");
+                int Players;
+                string input = Console.ReadLine();
+                bool valid = Int32.TryParse(input, out Players);
+                if (valid) {Game = new Game(Players); Game.Loop();}
+                if (!valid)
+                {
+                    if(input.ToLower() == "exit") {Console.Write("Exiting..."); run = false;} 
+                    else Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Not An Interger{Color.Reset}");
+                    
+                }
+            }
         }
     }
 }
