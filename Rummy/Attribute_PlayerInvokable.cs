@@ -53,6 +53,8 @@ namespace Rummy
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     public class TurnEnder : Attribute { }
+    [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+    public class AutoCompleteParameter : Attribute{}
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class PlayerInvokable : Attribute
