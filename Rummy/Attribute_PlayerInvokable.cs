@@ -89,9 +89,11 @@ namespace Rummy
                 }
             }
             //invoke the method using the given parameters, if above requirements match
-            Info.Invoke(instance, parameters.ToArray());
+            try
+            {
+                Info.Invoke(instance, parameters.ToArray());
+            }
+            catch(Exception E){Console.WriteLine($"{TextColor.Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{TextColor.Color.Reset}");}
         }
-        
-
     }
 }
