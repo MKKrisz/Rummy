@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TextColor;
+using Rummy.TextColor;
 
 namespace Rummy
 {
@@ -57,8 +57,8 @@ namespace Rummy
             }
         }
 
-        [PlayerInvokable(Name = "Switch", Description = "Switches two cards in the hand (useful for manual sorting)")]
-        public void Switch(int a, int b)
+        [PlayerInvokable(Name = "Swap", Description = "Switches two cards in the hand (useful for manual sorting)")]
+        public void Swap(int a, int b)
         {
             if (a > Cards.Count || b > Cards.Count)
             {
@@ -80,10 +80,17 @@ namespace Rummy
         [TurnEnder]
         public void Discard([AutoCompleteParameter]List<Card> DiscardPile, int id)
         {
-            DiscardPile.Add(Cards[id]);
+            while (id >= Cards.Count || id<0)
+            {
+                Console.Write($"{Colors.Error.AnsiFGCode}[ERROR]: Invalid index{Colors.Reset}\nNew Number> ");
+                if(Int32.TryParse(Console.ReadLine(), out int b)) {id = b;}
+            }
+            if(id<Cards.Count)DiscardPile.Add(Cards[id]);
             Cards.RemoveAt(id);
         }
 
+        [PlayerInvokable(Name = "Ls", Description = "Alias for list")]
+        public void Ls() => List(false);
         [PlayerInvokable(Name = "List", Description = "Lists the player's cards")]
         public void List(bool horizontal = true)
         {
@@ -109,10 +116,15 @@ namespace Rummy
             if(selection.Length == 0){Selection.Clear();}
             for (int i = 0; i < selection.Length; i++)
             {
-                Selection.Add(Convert.ToInt32(selection[i]));   
+                try
+                {
+                    int s;
+                    if((s = Convert.ToInt32(selection[i]))<Cards.Count && s>0) Selection.Add(s);
+                }
+                //Tempoorary fix for exception crashing the program
+                catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
             }
         }
-
         [PlayerInvokable(Name = "Meld",  Description = "Creates a meld made of the selection given")]
         public void Meld([AutoCompleteParameter]List<Meld> melds, params object[] selection)
         {
@@ -123,7 +135,16 @@ namespace Rummy
             }
             else
             {
-                for(int i = 0; i<selection.Length; i++)Selection.Add(Convert.ToInt32(selection[i]));
+                for (int i = 0; i < selection.Length; i++)
+                {
+                    try
+                    {
+                        int s;
+                        if((s = Convert.ToInt32(selection[i]))<Cards.Count && s>=0) Selection.Add(s);
+                    }
+                    //Tempoorary fix for exception crashing the program
+                    catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
+                }
             }
 
             List<Card> SelectedCards = new List<Card>();
@@ -132,9 +153,9 @@ namespace Rummy
             bool success = true;
             try
             {
-                newMeld = Rummy.Meld.Melder(SelectedCards);
+                newMeld = Rummy.Meld.Melder(SelectedCards, PlayerID);
             }
-            catch(Exception E) { Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}"); success = false;}
+            catch(Exception E) { Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}"); success = false;}
 
             if (success)
             {
@@ -142,11 +163,51 @@ namespace Rummy
                 Array.Sort(buffer);
                 Selection = buffer.ToList();
                 for(int i = Selection.Count-1; i>=0; i--)Cards.RemoveAt(Selection[i]);
-                Selection.Clear();
             }
             if(newMeld != null){melds.Add(newMeld);}
+            Selection.Clear();
+        }
+
+        [PlayerInvokable(Name = "Add", Description = "Tries to extend a selected meld with the given card")]
+        public void Add(List<Meld> melds, int meldindex, int cardindex)
+        {
+            Card AddedCard = Cards[cardindex];
+            Meld ExtendedMeld = melds[meldindex];
+            if(ExtendedMeld.Validate(AddedCard))
+            {
+                if (ExtendedMeld is SetMeld)
+                {
+                    ExtendedMeld.Cards.Add(AddedCard);
+                    Cards.RemoveAt(cardindex);
+                    if (ExtendedMeld.Cards.Count > Program.Suit.Length)
+                    {
+                        for (int i = 0; i < ExtendedMeld.Cards.Count; i++)
+                        {
+                            if (ExtendedMeld.Cards[i].Value == (int)Value.Joker)
+                            {
+                                Cards.Add(ExtendedMeld.Cards[i]);
+                                ExtendedMeld.Cards.RemoveAt(i);
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                if (ExtendedMeld is RunMeld)
+                {
+                    if(AddedCard.Value+1 == ExtendedMeld.Cards[0].Value)        {ExtendedMeld.Cards.Insert(0, AddedCard); Cards.RemoveAt(cardindex); return; }
+                    if(AddedCard.Value-1 == ExtendedMeld.Cards[ExtendedMeld.Cards.Count-1].Value){ExtendedMeld.Cards.Add(AddedCard);       Cards.RemoveAt(cardindex); return; }
+
+                    for (int i = 0; i < ExtendedMeld.Cards.Count; i++)
+                    {
+                        if (ExtendedMeld.Cards[i].Value == (int)Value.Joker)
+                        {
+                            if(ExtendedMeld.Cards[i-1].Value == AddedCard.Value - 1){ExtendedMeld.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(ExtendedMeld.Cards[i+1]); ExtendedMeld.Cards.RemoveAt(i+1);return; }
+                            if(ExtendedMeld.Cards[i+1].Value == AddedCard.Value + 1){ExtendedMeld.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(ExtendedMeld.Cards[i+1]); ExtendedMeld.Cards.RemoveAt(i+1);return; }
+                        }
+                    }
+                }
+            }
         }
     }
-
-    
 }
