@@ -1,8 +1,9 @@
-namespace TextColor
+namespace Rummy.TextColor
 {
     public static class Colors
     {
-        public static Color Error      => new Color(255,   0,   0);
+        public static Color Red        => new Color(255,   0,   0);
+        public static Color Error      => Red;
         public static Color FatalError => new Color(128,   0,   0);
         public static Color Warning    => new Color(255, 255,   0);
         public static Color Ignorable  => new Color(128, 128, 128);
@@ -10,6 +11,9 @@ namespace TextColor
         public static Color Text       => new Color(255, 255, 255);
         public static Color Background => new Color(  0,   0,   0);
         public static Color Important  => new Color(  0, 255, 255);
+
+
+        public static string Reset = Color.Reset;
     }
     public class Color
     {
