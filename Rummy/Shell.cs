@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using TextColor;
+using Rummy.TextColor;
 
 namespace Rummy
 {
@@ -176,25 +176,28 @@ namespace Rummy
                             //Note2: Also added a whitelist for types allowed to have instance method commands.
 
                             // Test for (optimally) each type contained in PlayerInvokableContainer.instanceMethodWhitelist, and provide an appropriate object instance. Otherwise: Method assumed to be static, instance is null.
-                            try{
-                                if(match.Info.DeclaringType == typeof(Hand))  match.Invoke(Args.ToList(), instance: Hand);
-                                else if(match.Info.DeclaringType == typeof(Shell)) match.Invoke(Args.ToList(), instance: this);
+                            try {
+                                if (match.Info.DeclaringType == typeof(Hand)) match.Invoke(Args.ToList(), instance: Hand);
+                                else if (match.Info.DeclaringType == typeof(Shell)) match.Invoke(Args.ToList(), instance: this);
                                 else match.Invoke(Args.ToList());
                             }
-                            catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
+                            catch (Exception E) { Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}"); }
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
                             if (match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
                             
                             //displays a new prompt, discards last input
                             //TODO: command history
                             Console.Write("> ");
-                            Input.Clear();
-                            
                         }
+                        else
+                        {
+                            Console.Write($"\n{Colors.Warning.AnsiFGCode}[WARNING]: No method found. Type \"help\" for available commands{Color.Reset}\n> ");
+                        }
+                        Input.Clear();
                         break;
                     default:
                         //Adds key to the input
-                        Input.Add(key.KeyChar);
+                        if(key.KeyChar != '\0')Input.Add(key.KeyChar);
                         Console.Write(key.KeyChar);
                         break;
                 }
@@ -217,7 +220,7 @@ namespace Rummy
                     for (int i = 0; i < match.Params.Length; i++)
                     {
                         Console.Write($"{i}:\t");
-                        if(match.Params[i].GetCustomAttributes().OfType<AutoCompleteParameter>().Any()){Console.Write($"{Colors.Ignorable.AnsiFGCode}m(AutoCompleted) ");}
+                        if(match.Params[i].GetCustomAttributes().OfType<AutoCompleteParameter>().Any()){Console.Write($"{Colors.Ignorable.AnsiFGCode}(AutoCompleted) ");}
                         Console.Write($"{match.Params[i].Name}\t{match.Params[i].ParameterType}\u001b[m");
                         Console.Write("\n");
                     }
@@ -234,6 +237,35 @@ namespace Rummy
         }
 
         [PlayerInvokable(Name = "Clear", Description = "Clears the console")]
-        public void Clear() => Console.Clear(); 
+        public void Clear() => Console.Clear();
+        
+        [PlayerInvokable(Name = "Exit", Description = "Exits the game")]
+        public void Exit(bool save = false)
+        {
+            //TODO: save
+            if(save == true){throw new NotImplementedException();}
+
+            Program.Game.Run = false;
+            Program.Run = false;
+        }
+
+
+        [PlayerInvokable(Name = "Melds", Description = "Alias for ListMelds")]
+        public void LMelds() => ListMelds();
+        [PlayerInvokable(Name = "ListMelds", Description = "Lists all melds")]
+        public void ListMelds()
+        {
+            for (int i = 0; i < Melds.Count; i++)
+            {
+                string BG = Color.Reset;
+                if(Melds[i].PlayerID == PlayerID){BG = Colors.Selected.AnsiBGCode;}
+                Console.Write($"{BG}{i}: ID: {Melds[i].PlayerID}\t");
+                for (int j = 0; j < Melds[i].Cards.Count; j++)
+                {
+                    Console.Write($"{Program.Suit[(int)Melds[i].Cards[j].Suit]}{BG}{Program.Value[Melds[i].Cards[j].Value]} ");
+                }
+                Console.Write($"{Color.Reset}\n");
+            }
+        }
     }
 }
