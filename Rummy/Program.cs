@@ -19,7 +19,7 @@ namespace Rummy
                 Console.Write("How Many Players?\n> ");
                 int Players;
                 string input = Console.ReadLine();
-                bool valid = Int32.TryParse(input, out Players);
+                bool valid = Int32.TryParse(input, out Players) && Players < 4096;
                 if (valid) {Game = new Game(Players); Game.Loop();}
                 if (!valid)
                 {
