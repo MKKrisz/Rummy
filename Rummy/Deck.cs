@@ -63,7 +63,7 @@ namespace Rummy
                     Card card = new Card((Suit)s, v);
                     // Regular cards added twice; Joker only once.
                     PushCard(card);
-                    if (v != (int)Value.Joker) { PushCard(card.Copy()); }
+                    if (v != (int)Value.Joker) { PushCard(card/*.Copy()*/); } // [Dit05] WHY was this being copied? It's literally a local variable being created JUST above this line!
                 }
             }
         }
@@ -107,7 +107,7 @@ namespace Rummy
                 rand = shuffler;
 
             void Swap(int i, int j) {
-                Card temp = cards[i].Copy();
+                Card temp = cards[i]/*.Copy()*/; // [Dit05] Please show me how you make copies of cards when shuffling. I knew they're pretty old, but I didn't know they were magical also.
                 cards[i] = cards[j];
                 cards[j] = temp;
             }
