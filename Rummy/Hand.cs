@@ -79,14 +79,15 @@ namespace Rummy
         
         [PlayerInvokable(Name = "Discard", Description = "Discards a card, and thus ends the turn")]
         [TurnEnder]
-        public void Discard([AutoCompleteParameter]List<Card> DiscardPile, int id)
+        public void Discard([AutoCompleteParameter]Deck DiscardPile, int id)
         {
+            if(DiscardPile == null) throw new Exception("discrad pile is null");
             while (id >= Cards.Count || id<0)
             {
                 Console.Write($"{Colors.Error.AnsiFGCode}[ERROR]: Invalid index{Colors.Reset}\nNew Number> ");
                 if(Int32.TryParse(Console.ReadLine(), out int b)) {id = b;}
             }
-            if(id<Cards.Count)DiscardPile.Add(Cards[id]);
+            DiscardPile.PushCard(Cards[id]);
             Cards.RemoveAt(id);
         }
 

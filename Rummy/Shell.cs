@@ -20,7 +20,7 @@ namespace Rummy
         private Player Player;
         int Round => Program.Game.Round;
         Deck GameDeck => Program.Game.Deck;                         //reference to the game deck
-        List<Card> DiscardPile => Program.Game.DiscardPile;         //reference to the discard pile, for picking it up, or for ending the turn
+        Deck DiscardPile => Program.Game.DiscardPile;         //reference to the discard pile, for picking it up, or for ending the turn
         Card TrumpCard => Program.Game.TrumpCard;
         private List<Meld> Melds => Program.Game.Melds;
 
@@ -139,8 +139,8 @@ namespace Rummy
                                     
                                     //----------------------------!!---------------------------------------------
                                     if(t == typeof(Deck))       {Args[CurrentParameter.Position] = GameDeck;}
+                                    if(t == typeof(Deck) && CurrentParameter.Name == nameof(DiscardPile) /* HACK */)       {Args[CurrentParameter.Position] = DiscardPile; }
                                     if(t == typeof(Hand))       {Args[CurrentParameter.Position] = Hand;}
-                                    if(t == typeof(List<Card>)) {Args[CurrentParameter.Position] = DiscardPile;}
                                     if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard;}
                                     if(t == typeof(List<Meld>)) {Args[CurrentParameter.Position] = Melds;}
                                     //----------------------------!!---------------------------------------------
@@ -176,14 +176,22 @@ namespace Rummy
                             //Note2: Also added a whitelist for types allowed to have instance method commands.
 
                             // Test for (optimally) each type contained in PlayerInvokableContainer.instanceMethodWhitelist, and provide an appropriate object instance. Otherwise: Method assumed to be static, instance is null.
+                            bool failed = false;
                             try {
                                 if (match.Info.DeclaringType == typeof(Hand)) match.Invoke(Args.ToList(), instance: Hand);
                                 else if (match.Info.DeclaringType == typeof(Shell)) match.Invoke(Args.ToList(), instance: this);
                                 else match.Invoke(Args.ToList());
                             }
-                            catch (Exception E) { Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}"); }
+                            catch (Exception E) {
+                                failed = true;
+                                Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");
+#if DEBUG
+                                Console.WriteLine($"\n\nStack trace:\n{E.StackTrace}");
+#endif
+                                Console.ReadKey(true); // [Dit05] The console would be immediately cleared after printing the exception. Good thing this didn't cause anyone problems, right?
+                            }
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
-                            if (match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
+                            if (!failed && match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
                             
                             //displays a new prompt, discards last input
                             //TODO: command history
