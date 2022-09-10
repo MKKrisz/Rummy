@@ -72,7 +72,7 @@ namespace Rummy
                 return;
             }
 
-            Card buffer = Cards[a].Copy();
+            Card buffer = Cards[a];
             Cards[a] = Cards[b];
             Cards[b] = buffer;
         }
