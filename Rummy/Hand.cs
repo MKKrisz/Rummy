@@ -53,6 +53,7 @@ namespace Rummy
         {
             public int Compare(Card x, Card y)
             {
+                if(x == null || y == null) return 0;
                 return (int)x.Suit - (int)y.Suit;
             }
         }
