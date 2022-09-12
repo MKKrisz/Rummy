@@ -42,9 +42,11 @@ namespace Rummy
         {
             public int Compare(Card x, Card y)
             {
-                if (x == null || y == null) { return 0;}
-                if (x.Value <  y.Value) {return -1;}
-                if (x.Value == y.Value) {return  0;}
+                if (x == null || y == null)     {return  0;}
+                //if (x.Value == (int)Value.Joker){return  1;}
+                //if (y.Value == (int)Value.Joker){return -1;}
+                if (x.Value <  y.Value)         {return -1;}
+                if (x.Value == y.Value)         {return  0;}
                 return  1;
             }
         }
@@ -56,7 +58,7 @@ namespace Rummy
                 return (int)x.Suit - (int)y.Suit;
             }
         }
-
+        
         [PlayerInvokable(Name = "Swap", Description = "Switches two cards in the hand (useful for manual sorting)")]
         public void Swap(int a, int b)
         {
@@ -77,18 +79,20 @@ namespace Rummy
         }
         
         [PlayerInvokable(Name = "Discard", Description = "Discards a card, and thus ends the turn")]
-        [TurnEnder]
-        public void Discard([AutoCompleteParameter]Deck DiscardPile, int id = -1)
+        public bool Discard([AutoCompleteParameter]Deck DiscardPile, int id = -1)
         {
             if(id == -1){id = Cards.Count - 1;}
             if(DiscardPile == null) throw new Exception("discrad pile is null");
             while (id >= Cards.Count || id<0)
             {
-                Console.Write($"{Colors.Error.AnsiFGCode}[ERROR]: Invalid index{Colors.Reset}\nNew Number> ");
-                if(Int32.TryParse(Console.ReadLine(), out int b)) {id = b;}
+                Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: Invalid index. Give a valid number to proceed, or \"cancel\" to cancel the action{Colors.Reset}\nNew Number> ");
+                string s = Console.ReadLine();
+                if(Int32.TryParse(s, out int b)) {id = b;}
+                else if(s.ToLower() == "cancel"){return false;}
             }
             DiscardPile.PushCard(Cards[id]);
             Cards.RemoveAt(id);
+            return true;
         }
 
         [PlayerInvokable(Name = "Ls", Description = "Alias for list")]
@@ -175,11 +179,13 @@ namespace Rummy
         {
             Card AddedCard = Cards[cardindex];
             Meld ExtendedMeld = melds[meldindex];
+            bool success = false;
             if(ExtendedMeld.Validate(AddedCard))
             {
                 if (ExtendedMeld is SetMeld)
                 {
                     ExtendedMeld.Cards.Add(AddedCard);
+                    success = true;
                     Cards.RemoveAt(cardindex);
                     if (ExtendedMeld.Cards.Count > Program.Suit.Length)
                     {
@@ -195,21 +201,71 @@ namespace Rummy
                     return;
                 }
 
-                if (ExtendedMeld is RunMeld)
+                if (ExtendedMeld is RunMeld rm)
                 {
-                    if(AddedCard.Value+1 == ExtendedMeld.Cards[0].Value)        {ExtendedMeld.Cards.Insert(0, AddedCard); Cards.RemoveAt(cardindex); return; }
-                    if(AddedCard.Value-1 == ExtendedMeld.Cards[ExtendedMeld.Cards.Count-1].Value){ExtendedMeld.Cards.Add(AddedCard);       Cards.RemoveAt(cardindex); return; }
+                    if(AddedCard.Value != (int)Value.Joker){
+                        if (rm.Cards[0].Value == (int)Value.Joker) {
+                            Card JokerRef = new Card(rm.MeldSuit, rm.Cards[1].Value - 1);
+                            if(AddedCard.Value + 1 == JokerRef.Value)                  {rm.Cards.Insert(0, AddedCard); Cards.RemoveAt(cardindex); success = true; return; }
+                        }
+                        if (rm.Cards[rm.Cards.Count-1].Value == (int)Value.Joker) {
+                            Card JokerRef = new Card(rm.MeldSuit, rm.Cards[rm.Cards.Count-2].Value + 1);
+                            if(AddedCard.Value - 1 == JokerRef.Value)                  {rm.Cards.Add(AddedCard);       Cards.RemoveAt(cardindex); success = true; return; }
+                        }
+                        if(rm.Cards[0].Value != (int)Value.Joker && 
+                           AddedCard.Value+1 == rm.Cards[0].Value)                     {rm.Cards.Insert(0, AddedCard); Cards.RemoveAt(cardindex); success = true; return; }
+                        if(rm.Cards[rm.Cards.Count-1].Value != (int)Value.Joker && 
+                           AddedCard.Value-1 == rm.Cards[rm.Cards.Count-1].Value)      {rm.Cards.Add(AddedCard);       Cards.RemoveAt(cardindex); success = true; return; }
 
-                    for (int i = 0; i < ExtendedMeld.Cards.Count; i++)
-                    {
-                        if (ExtendedMeld.Cards[i].Value == (int)Value.Joker)
+                        for (int i = 0; i < rm.Cards.Count; i++)
                         {
-                            if(ExtendedMeld.Cards[i-1].Value == AddedCard.Value - 1){ExtendedMeld.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(ExtendedMeld.Cards[i+1]); ExtendedMeld.Cards.RemoveAt(i+1);return; }
-                            if(ExtendedMeld.Cards[i+1].Value == AddedCard.Value + 1){ExtendedMeld.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(ExtendedMeld.Cards[i+1]); ExtendedMeld.Cards.RemoveAt(i+1);return; }
+                            if (rm.Cards[i].Value == (int)Value.Joker)
+                            {
+                                if(i > 0 && rm.Cards[i-1].Value == AddedCard.Value - 1){rm.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(rm.Cards[i+1]); rm.Cards.RemoveAt(i+1); success = true; return; }
+                                if(i < rm.Cards.Count-1 && rm.Cards[i+1].Value == AddedCard.Value + 1){rm.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(rm.Cards[i+1]); rm.Cards.RemoveAt(i+1); success = true; return; }
+                            }
+                        }
+                    }
+
+                    if (AddedCard.Value == (int)Value.Joker)
+                    {
+                        Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: The Joker card yoou referenced WILL be used up.{Colors.Important.AnsiFGCode} Proceed? [y/N] ");
+                        char input = Console.ReadKey(false).KeyChar;
+                        Console.Write("\n");
+                        if (input == 'y')
+                        {
+                            Console.Write($"{Colors.Important.AnsiFGCode}Should the card be placed at the end of the meld? [y/N]{Color.Reset} ");
+                            input = Console.ReadKey(false).KeyChar;
+                            Console.Write("\n");
+                            if (input == 'y')
+                            {
+                                rm.Cards.Add(AddedCard);
+                                Console.WriteLine($"{Colors.Important.AnsiFGCode} Card placed at the end of the meld{Color.Reset}");
+                            }
+                            else
+                            {
+                                rm.Cards.Insert(0, AddedCard);
+                                Console.WriteLine($"{Colors.Important.AnsiFGCode} Card placed at the start of the meld{Color.Reset}");
+                            }
+
+                            success = true;
                         }
                     }
                 }
             }
+            else{Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Selected card wasn't added, as it couldn't be inserted anywhere.{Color.Reset}");}
+            if(!success){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Insert attempt was unsuccessful{Color.Reset}");}
         }
+        
+#if DEBUG
+        [PlayerInvokable(Name = "/give", Description = "/give")]
+        public void Give(Suit suit, Value v, int playerID = -1)
+        {
+            Hand h;
+            if(playerID == -1){h = this;}
+            else h = Program.Game.Players[playerID].Hand;
+            h.Cards.Add(new Card(suit, (int)v));
+        }
+#endif
     }
 }
