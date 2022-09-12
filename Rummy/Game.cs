@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Rummy
 {
-    public class Game
+    [Serializable]
+    public class Game 
     {
         public Player[] Players;
         public Deck Deck;
@@ -12,7 +15,10 @@ namespace Rummy
         public List<Meld> Melds = new List<Meld>();
 
         public int Round;
+        public int CurrentPlayer = 0;
         public bool Run = true;
+        
+        public Game(){}
 
         public Game(int PlayerAmount)
         {
@@ -30,24 +36,23 @@ namespace Rummy
 
         public void Loop()
         {
-            int i = 0;
             while (Run)
             {
-                if (i == Players.Length) {i = 0;Round++;}
-                if ((i != 0 || Round != 0) && Deck.CardsLeft != 0) {Players[i].Hand.Cards.Add(Deck.Draw(Program.r));}
-                else if(Deck.CardsLeft == 0 && TrumpCard != null){Players[i].Hand.Cards.Add(TrumpCard.Copy()); TrumpCard = null;}
+                if (CurrentPlayer == Players.Length) {CurrentPlayer = 0;Round++;}
+                if ((CurrentPlayer != 0 || Round != 0) && Deck.CardsLeft != 0) {Players[CurrentPlayer].Hand.Cards.Add(Deck.Draw(Program.r));}
+                else if(Deck.CardsLeft == 0 && TrumpCard != null){Players[CurrentPlayer].Hand.Cards.Add(TrumpCard.Copy()); TrumpCard = null;}
                 if (Deck.CardsLeft == 0) {
                     Deck.AddCards(DiscardPile);
                     DiscardPile.Clear();
                 }
-                Players[i].SH.StartTurn();
-                if (Players[i].Hand.Cards.Count == 0)
+                Players[CurrentPlayer].SH.StartTurn();
+                if (Players[CurrentPlayer].Hand.Cards.Count == 0)
                 {
                     Run = false;
                 }
 
 
-                i++;
+                CurrentPlayer++;
             }
         }
     }
