@@ -65,17 +65,17 @@ namespace Rummy
         public ParameterInfo[] Params;
         
         public PlayerInvokable(){}
-        public void Invoke(List<Object> parameters, object instance = null) {
+        public object Invoke(List<Object> parameters, object instance = null) {
             //if more parameters are given, return
-            if (parameters.Count > Params.Length) { return;}
+            if (parameters.Count > Params.Length) { throw new Exception("Too much parameters!");}
             
             for (int i = 0; i < Params.Length; i++) {
                 if (!Params[i].IsOptional) {
                     //if required parameter does not have a value given, return
-                    if (i >= parameters.Count) { return;}
+                    if (i >= parameters.Count) { throw new Exception($"No value given for required parameter \"{Params[i].Name}\"");}
                     
                     //if there is a type mismatch between required parameter and given value, return
-                    if (Params[i].ParameterType != parameters[i]?.GetType()) { return; }
+                    if (Params[i].ParameterType != parameters[i]?.GetType()) { throw new Exception($"Type mismatch: {parameters[i].GetType()} is not {Params[i].ParameterType}"); }
                 }
 
                 if (Params[i].IsOptional) {
@@ -89,11 +89,14 @@ namespace Rummy
                 }
             }
             //invoke the method using the given parameters, if above requirements match
+            object op = null;
             try
             {
-                Info.Invoke(instance, parameters.ToArray());
+                op = Info.Invoke(instance, parameters.ToArray());
             }
             catch(Exception E){Console.WriteLine($"{TextColor.Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{TextColor.Color.Reset}");}
+
+            return op;
         }
     }
 }
