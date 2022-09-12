@@ -177,10 +177,11 @@ namespace Rummy
 
                             // Test for (optimally) each type contained in PlayerInvokableContainer.instanceMethodWhitelist, and provide an appropriate object instance. Otherwise: Method assumed to be static, instance is null.
                             bool failed = false;
+                            object ReturnValue = null;
                             try {
-                                if (match.Info.DeclaringType == typeof(Hand)) match.Invoke(Args.ToList(), instance: Hand);
-                                else if (match.Info.DeclaringType == typeof(Shell)) match.Invoke(Args.ToList(), instance: this);
-                                else match.Invoke(Args.ToList());
+                                if (match.Info.DeclaringType == typeof(Hand)) ReturnValue = match.Invoke(Args.ToList(), instance: Hand);
+                                else if (match.Info.DeclaringType == typeof(Shell)) ReturnValue = match.Invoke(Args.ToList(), instance: this);
+                                else ReturnValue = match.Invoke(Args.ToList());
                             }
                             catch (Exception E) {
                                 failed = true;
@@ -189,9 +190,14 @@ namespace Rummy
                                 Console.WriteLine($"\n\nStack trace:\n{E.StackTrace}");
 #endif
                                 Console.ReadKey(true); // [Dit05] The console would be immediately cleared after printing the exception. Good thing this didn't cause anyone problems, right?
+                                                       // [MKKrisz] It actually does not clear the console, it just creates a new prompt so you can continue, so this feature is only an attention-grabber
                             }
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
-                            if (!failed && match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) { run = false;}
+                            if (!failed && match.Info.GetCustomAttributes().OfType<TurnEnder>().Any())
+                            {
+                                if(ReturnValue is bool rv && rv == true)run = false;
+                                if(ReturnValue == null){run = false;}
+                            }
                             
                             //displays a new prompt, discards last input
                             //TODO: command history
@@ -248,16 +254,20 @@ namespace Rummy
         public void Clear() => Console.Clear();
         
         [PlayerInvokable(Name = "Exit", Description = "Exits the game")]
+        [TurnEnder]
         public void Exit(bool save = false)
         {
             //TODO: save
-            if(save == true){throw new NotImplementedException();}
+            if(save == true){Save_Load.Save(Program.Game);}
 
             Program.Game.Run = false;
             Program.Run = false;
         }
 
-
+        [TurnEnder]
+        public static void EndTurn(){}
+        
+        
         [PlayerInvokable(Name = "Melds", Description = "Alias for ListMelds")]
         public void LMelds() => ListMelds();
         [PlayerInvokable(Name = "ListMelds", Description = "Lists all melds")]
@@ -274,6 +284,15 @@ namespace Rummy
                 }
                 Console.Write($"{Color.Reset}\n");
             }
+        }
+
+        [PlayerInvokable(Name = "Info", Description = "Displays your hand, and the table")]
+        public void Info()
+        {
+            Console.WriteLine($"{PlayerID}'s hand:");
+            Hand.Ls();
+            Console.WriteLine("Melds:");
+            LMelds();
         }
     }
 }
