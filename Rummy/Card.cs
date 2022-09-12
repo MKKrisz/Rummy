@@ -11,7 +11,7 @@ namespace Rummy
         public int Value;
 
         public int PointValue => GetValue();
-
+        
         public Card(Suit suit, int val)
         {
             if(val < 0 || val > (int)Rummy.Value.King)
