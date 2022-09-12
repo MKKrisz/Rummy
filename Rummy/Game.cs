@@ -8,7 +8,7 @@ namespace Rummy
         public Player[] Players;
         public Deck Deck;
         public Card TrumpCard;
-        public List<Card> DiscardPile = new List<Card>();
+        public Deck DiscardPile = new Deck();
         public List<Meld> Melds = new List<Meld>();
 
         public int Round;
@@ -25,7 +25,8 @@ namespace Rummy
                 Players[i] = new Player(Program.r, Deck, i);
             }
         }
-        public Card GetLastDiscard(){return DiscardPile[DiscardPile.Count()-1];}
+
+        public Card GetLastDiscard() => DiscardPile.PopCard();
 
         public void Loop()
         {

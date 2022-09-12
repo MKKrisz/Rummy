@@ -12,8 +12,6 @@ namespace Rummy
         public List<int> Selection = new List<int>();
         public int PlayerID;
 
-        
-        public Hand(){}
         public Hand(Random r, Deck deck, bool firstPlayer, int playerId)
         {
             PlayerID = playerId;
@@ -77,18 +75,19 @@ namespace Rummy
             Cards[a] = Cards[b];
             Cards[b] = buffer;
         }
-
+        
         [PlayerInvokable(Name = "Discard", Description = "Discards a card, and thus ends the turn")]
         [TurnEnder]
-        public void Discard([AutoCompleteParameter] List<Card> DiscardPile, int id = -1)
+        public void Discard([AutoCompleteParameter]Deck DiscardPile, int id = -1)
         {
             if(id == -1){id = Cards.Count - 1;}
+            if(DiscardPile == null) throw new Exception("discrad pile is null");
             while (id >= Cards.Count || id<0)
             {
                 Console.Write($"{Colors.Error.AnsiFGCode}[ERROR]: Invalid index{Colors.Reset}\nNew Number> ");
                 if(Int32.TryParse(Console.ReadLine(), out int b)) {id = b;}
             }
-            if(id<Cards.Count)DiscardPile.Add(Cards[id]);
+            DiscardPile.PushCard(Cards[id]);
             Cards.RemoveAt(id);
         }
 

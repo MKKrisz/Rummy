@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace Rummy
 {
-    public class Deck                       //an object that generates random cards the same way you pull cards from a deck
+    /// Holds cards.
+    public class Deck : IEnumerable<Card>
     {
         const int SUIT_COUNT = 4;
         private int values = 14;            //Number of different values  (ex.: A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Joker)
@@ -12,6 +13,14 @@ namespace Rummy
         private readonly List<Card> cards = new List<Card>();
         public int CardsLeft => cards.Count;
 
+        public Card this[int index]
+        {
+            get => cards[index];
+        }
+
+        public IEnumerator<Card> GetEnumerator() => cards.GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator(); // [Dit05] This might look arcane, but it's only because it IS arcane.
+
         private static readonly Random shuffler = Program.r;
 
         public Deck()
@@ -19,6 +28,9 @@ namespace Rummy
             Populate();
             Shuffle();
         }
+
+
+        public void Clear() => cards.Clear();
 
         /// Adds a card onto the top of the stack, so that it will be the next card drawn.
         public void PushCard(Card card) => cards.Add(card);
@@ -63,7 +75,7 @@ namespace Rummy
                     Card card = new Card((Suit)s, v);
                     // Regular cards added twice; Joker only once.
                     PushCard(card);
-                    if (v != (int)Value.Joker) { PushCard(card.Copy()); }
+                    if (v != (int)Value.Joker) { PushCard(card/*.Copy()*/); } // [Dit05] WHY was this being copied? It's literally a local variable being created JUST above this line!
                 }
             }
         }
@@ -107,7 +119,7 @@ namespace Rummy
                 rand = shuffler;
 
             void Swap(int i, int j) {
-                Card temp = cards[i].Copy();
+                Card temp = cards[i]/*.Copy()*/; // [Dit05] Please show me how you make copies of cards when shuffling. I knew they're pretty old, but I didn't know they were magical also.
                 cards[i] = cards[j];
                 cards[j] = temp;
             }

@@ -75,7 +75,7 @@ namespace Rummy
                     if (i >= parameters.Count) { return;}
                     
                     //if there is a type mismatch between required parameter and given value, return
-                    if (Params[i].ParameterType != parameters[i].GetType()) { return; }
+                    if (Params[i].ParameterType != parameters[i]?.GetType()) { return; }
                 }
 
                 if (Params[i].IsOptional) {
