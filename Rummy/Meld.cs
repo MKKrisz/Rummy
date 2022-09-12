@@ -67,11 +67,20 @@ namespace Rummy
                             Cards.RemoveAt(0);
                             Cards.Insert(i-1, Joker);
                         }
-                        else{throw new Exception("Meld is not continuos");}
+                        else{throw new Exception("Meld is not continiuos");}
                     }
 
-                    rm.Cards = Cards;
                 }
+                bool choice = true;
+                while(Cards[0].Value == (int)Rummy.Value.Joker && choice)
+                {
+                    Console.Write($"{Colors.Important.AnsiFGCode}[IMPORTANT]: Unused Joker found. Shall it be inserted at the end of the meld? [y/N]{Color.Reset} ");
+                    char input = Console.ReadKey(false).KeyChar;
+                    Console.Write("\n");
+                    if(input == 'y'){Cards.Add(Cards[0]); Cards.RemoveAt(0);}
+                    else{choice = false;}
+                }
+                rm.Cards = Cards;
             }
 
             Output.PlayerID = playerID;
@@ -98,10 +107,23 @@ namespace Rummy
 
         public override bool Validate(Card c)
         {
+            if(c.Value == (int)Rummy.Value.Joker){return true;}
             if(c.Suit      != MeldSuit)       {return false;}
             if(c.Value + 1 == Cards[0].Value) {return true;}
             if(c.Value - 1 == Cards[Cards.Count-1].Value){return true;}
-            for(int i = 1; i<Cards.Count-1; i++){
+
+            if (Cards[0].Value == (int)Rummy.Value.Joker)
+            {
+                Card JokerSubstitute = new Card(MeldSuit, Cards[1].Value - 1);
+                if(c.Value + 1 == JokerSubstitute.Value){return true;}
+            }
+            
+            if (Cards[Cards.Count-1].Value == (int)Rummy.Value.Joker)
+            {
+                Card JokerSubstitute = new Card(MeldSuit, Cards[Cards.Count-2].Value + 1);
+                if(c.Value - 1 == JokerSubstitute.Value){return true;}
+            }
+            for(int i = 0; i<Cards.Count; i++){
                 if (Cards[i].Value == (int)Rummy.Value.Joker)
                 {
                     if (i > 0             && Cards[i - 1].Value == c.Value - 1) { return true; }
