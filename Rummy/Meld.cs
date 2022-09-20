@@ -82,7 +82,6 @@ namespace Rummy
                 }
                 rm.Cards = Cards;
             }
-
             Output.PlayerID = playerID;
             return Output;
         }
