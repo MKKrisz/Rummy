@@ -11,7 +11,7 @@ namespace Rummy
         public Player[] Players;
         public Deck Deck;
         public Card TrumpCard;
-        public Deck DiscardPile = new Deck();
+        public Deck DiscardPile = new Deck(false);
         public List<Meld> Melds = new List<Meld>();
 
         public int Round;
@@ -23,8 +23,9 @@ namespace Rummy
         public Game(int PlayerAmount)
         {
             Players = new Player[PlayerAmount];
-            Deck = new Deck();
+            Deck = new Deck(true);
             TrumpCard = Deck.Draw(Program.r);
+            TrumpCard.MustBeUsed = true;
             
             for (int i = 0; i < PlayerAmount; i++)
             {
