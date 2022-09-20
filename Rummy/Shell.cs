@@ -12,12 +12,13 @@ namespace Rummy
         public int PlayerID;
         
         //method parameters which don't require to be input
-        private static readonly Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card), typeof(List<Meld>)};
+        private static readonly Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card), typeof(List<Meld>), typeof(int)/* you will murder me for this*/};
         
         
         //references to all needed variables
         private Hand Hand;                                          //reference to the player's hand
         private Player Player;
+        private int Score => Player.Score;
         int Round => Program.Game.Round;
         Deck GameDeck => Program.Game.Deck;                         //reference to the game deck
         Deck DiscardPile => Program.Game.DiscardPile;         //reference to the discard pile, for picking it up, or for ending the turn
@@ -30,8 +31,10 @@ namespace Rummy
             PlayerID = P.ID;
             Hand = P.Hand;
             Player = P;
+            History.Add("");
         }
 
+        List<string> History = new List<string>();
         //the search script used
         //TODO: search/autocomplete on method parameters
         PlayerInvokable[] Search(string input, bool exact)
@@ -63,11 +66,13 @@ namespace Rummy
             }
             Console.Clear();
             Console.Write($"Player {PlayerID}, Round {Round}\n");
+            Hand.ResetUsingStatus();
             Hand.List();
             Console.Write("> ");
 
             List<char> Input = new List<char>();
-            
+            int HistoryIndex = 0;
+            History[0] = "";
             bool run = true;
             while (run)
             {
@@ -97,14 +102,47 @@ namespace Rummy
                         }
                         //TODO: output, for when there is more/less matches
                         break;
+                    case ConsoleKey.UpArrow:
+                        HistoryIndex++;
+                        try
+                        {
+                            Input = History[HistoryIndex].ToCharArray().ToList();
+                            while(Console.CursorLeft != 0){Console.CursorLeft--;
+                                Console.Write(" ");
+                                Console.CursorLeft--;
+                            }
+                            Console.Write(" ");
+                            Console.CursorLeft--;
+                            Console.Write($"> {History[HistoryIndex]}");
+                        }
+                        catch{Console.Write("\a"); HistoryIndex = History.Count-1;}
+
+                        break;
+                    case ConsoleKey.DownArrow:
+                        HistoryIndex--;
+                        try
+                        {
+                            Input = History[HistoryIndex].ToCharArray().ToList();
+                            while(Console.CursorLeft != 0){Console.CursorLeft--;
+                                Console.Write(" ");
+                                Console.CursorLeft--;
+                            }
+                            Console.Write(" ");
+                            Console.CursorLeft--;
+                            Console.Write($"> {History[HistoryIndex]}");
+                        }
+                        catch{Console.Write("\a"); HistoryIndex = 0;}
+
+                        break;
                     case ConsoleKey.Enter:
                         if(Input.Count() == 0) {break;}
-                        
+                        History.Insert(1, new string(Input.ToArray()));
+                        HistoryIndex = 0;
                         //searches if there is (only) one exact mach for the given input, if there is, invokes it
                         
                         //splits up the string 
                         //should not give back null, as it is checked for a few lines above
-                        string[] splitInput = new string(Input.ToArray()).Split(' ');
+                        string[] splitInput = History[1].Split(' ');
                         string command = splitInput[0];
                         
                         List<string> b = splitInput.ToList();
@@ -128,6 +166,7 @@ namespace Rummy
                             {
                                 
                                 ParameterInfo CurrentParameter = match.Params[i];
+                                bool completed = false;
 
                                 //if the parameter's type is in AutocompleteArgs, autocomplete  
                                 if (Array.IndexOf(AutoCompleteArgs, CurrentParameter.ParameterType) != -1)
@@ -138,14 +177,15 @@ namespace Rummy
                                     //If you wish to add new autocompleted variables to the array above, DON'T forget to add functionality here!!
                                     
                                     //----------------------------!!---------------------------------------------
-                                    if(t == typeof(Deck))       {Args[CurrentParameter.Position] = GameDeck;}
-                                    if(t == typeof(Deck) && CurrentParameter.Name == nameof(DiscardPile) /* HACK */)       {Args[CurrentParameter.Position] = DiscardPile; }
-                                    if(t == typeof(Hand))       {Args[CurrentParameter.Position] = Hand;}
-                                    if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard;}
-                                    if(t == typeof(List<Meld>)) {Args[CurrentParameter.Position] = Melds;}
+                                    if(t == typeof(Deck) && CurrentParameter.Name == "DiscardPile" /* HACK */)       {Args[CurrentParameter.Position] = DiscardPile; completed = true;}
+                                    else if(t == typeof(Deck))       {Args[CurrentParameter.Position] = GameDeck; completed = true;}
+                                    if(t == typeof(Hand))       {Args[CurrentParameter.Position] = Hand; completed = true;}
+                                    if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard; completed = true;}
+                                    if(t == typeof(List<Meld>)) {Args[CurrentParameter.Position] = Melds; completed = true;}
+                                    if(t == typeof(int) && CurrentParameter.Name == "Score")                         {Args[CurrentParameter.Position] = Score; completed = true;}
                                     //----------------------------!!---------------------------------------------
                                 }
-                                else
+                                if(!completed)
                                 {
                                     if (IsParams(CurrentParameter))
                                     {
