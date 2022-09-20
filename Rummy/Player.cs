@@ -28,7 +28,7 @@ namespace Rummy
                 {
                     for (int n = 0; n < Melds[i].Cards.Count; n++)
                     {
-                        if (Melds[i].Cards[n].Value != (int)Value.Joker) { output+=Melds[i].Cards[n].Value; }
+                        if (Melds[i].Cards[n].Value != (int)Value.Joker) { output+=Melds[i].Cards[n].PointValue; }
                         else
                         {
                             int value = 0;
