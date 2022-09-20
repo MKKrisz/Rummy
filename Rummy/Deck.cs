@@ -23,10 +23,13 @@ namespace Rummy
 
         private static readonly Random shuffler = Program.r;
 
-        public Deck()
+        public Deck(bool fill)
         {
-            Populate();
-            Shuffle();
+            if (fill)
+            {
+                Populate();
+                Shuffle();
+            }
         }
 
 
@@ -57,6 +60,11 @@ namespace Rummy
             foreach(Card card in collection) AddCard(card);
         }
 
+        public Card GetCard(int index)
+        {
+            if(CardsLeft == 0) return null;
+            return cards[index];
+        }
         public Card PopCard() => CardsLeft > 0 ? RemoveCard(CardsLeft - 1) : null;
         public Card RemoveCard(int index)
         {
@@ -64,7 +72,7 @@ namespace Rummy
             Card card = cards[index];
             cards.RemoveAt(index);
             return card;
-            }
+        }
 
         public void Populate()
         {
@@ -107,6 +115,7 @@ namespace Rummy
             for (int i = 0; i < amount; i++)
             {
                 output[i] = Draw(r);
+                output[i].MustBeUsed = false;
             }
 
             return output;
