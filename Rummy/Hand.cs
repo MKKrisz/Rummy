@@ -20,6 +20,11 @@ namespace Rummy
             if (firstPlayer) { Cards.AddRange(deck.Deal(r, 15)); }
             else             { Cards.AddRange(deck.Deal(r));}
         }
+
+        public void ResetUsingStatus()
+        {
+            for(int i = 0; i<Cards.Count; i++){Cards[i].MustBeUsed = false;}
+        }
         
         public enum SortType{Suit = 0, Value = 1, Both = 2}
         [PlayerInvokable(Name = "Sort", Description = "Sorts the hand based on input (0/Suit, 1/Value, 2/Both)")]
@@ -50,7 +55,6 @@ namespace Rummy
                 return  1;
             }
         }
-
         public class CardSuitComparer : IComparer<Card>
         {
             public int Compare(Card x, Card y)
@@ -78,11 +82,12 @@ namespace Rummy
             Cards[b] = buffer;
         }
         
+        [TurnEnder]
         [PlayerInvokable(Name = "Discard", Description = "Discards a card, and thus ends the turn")]
         public bool Discard([AutoCompleteParameter]Deck DiscardPile, int id = -1)
         {
             if(id == -1){id = Cards.Count - 1;}
-            if(DiscardPile == null) throw new Exception("discrad pile is null");
+            if(DiscardPile == null) throw new Exception("discard pile is null");
             while (id >= Cards.Count || id<0)
             {
                 Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: Invalid index. Give a valid number to proceed, or \"cancel\" to cancel the action{Colors.Reset}\nNew Number> ");
@@ -90,8 +95,16 @@ namespace Rummy
                 if(Int32.TryParse(s, out int b)) {id = b;}
                 else if(s.ToLower() == "cancel"){return false;}
             }
+            for (int i = 0; i < Cards.Count; i++)
+            {
+                if(i != id && Cards[i].MustBeUsed){Console.Write($"{Colors.Error.AnsiFGCode}[ERROR]: Action forbidden, there are cards required to be used!\n");
+                    return false;
+                }
+            }
+            
             DiscardPile.PushCard(Cards[id]);
             Cards.RemoveAt(id);
+            DiscardPile.GetCard(DiscardPile.CardsLeft - 1).MustBeUsed = true;
             return true;
         }
 
@@ -103,14 +116,15 @@ namespace Rummy
             for (int i = 0; i < Cards.Count; i++)
             {
                 string BG = Color.Reset;
-                
+                string FG = "";
                 bool Selected = Selection.IndexOf(i) != -1; 
                 if(Selected){BG = Colors.Selected.AnsiBGCode;}
+                if(Cards[i].MustBeUsed){FG = Colors.Warning.AnsiFGCode;}
                 
-                if(!horizontal) Console.WriteLine($"{i}:\t{BG}{Program.Suit[(int)Cards[i].Suit]}{BG}{Program.Value[Cards[i].Value]}{Color.Reset}");
+                if(!horizontal) Console.WriteLine($"{FG}{i}:\t{BG}{Program.Suit[(int)Cards[i].Suit]}{BG}{FG}{Program.Value[Cards[i].Value]}{Color.Reset}");
                 if (horizontal)
                 {
-                    Console.Write($"{BG}{Program.Suit[(int)Cards[i].Suit]}{BG}{Program.Value[Cards[i].Value]}{Color.Reset} ");
+                    Console.Write($"{BG}{FG}{Program.Suit[(int)Cards[i].Suit]}{BG}{FG}{Program.Value[Cards[i].Value]}{Color.Reset} ");
                 }
             }
             if(horizontal){Console.Write("\n");}
@@ -148,7 +162,7 @@ namespace Rummy
                         int s;
                         if((s = Convert.ToInt32(selection[i]))<Cards.Count && s>=0) Selection.Add(s);
                     }
-                    //Tempoorary fix for exception crashing the program
+                    //Temporary fix for exception crashing the program
                     catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
                 }
             }
@@ -169,14 +183,16 @@ namespace Rummy
                 Array.Sort(buffer);
                 Selection = buffer.ToList();
                 for(int i = Selection.Count-1; i>=0; i--)Cards.RemoveAt(Selection[i]);
+                for (int i = 0; i < newMeld.Cards.Count; i++) newMeld.Cards[i].MustBeUsed = true;
             }
             if(newMeld != null){melds.Add(newMeld);}
             Selection.Clear();
         }
 
         [PlayerInvokable(Name = "Add", Description = "Tries to extend a selected meld with the given card")]
-        public void Add(List<Meld> melds, int meldindex, int cardindex)
+        public void Add(List<Meld> melds, int Score , int meldindex, int cardindex)
         {
+            if(Score<51){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: Score is less than 51{Color.Reset}");return;}
             Card AddedCard = Cards[cardindex];
             Meld ExtendedMeld = melds[meldindex];
             bool success = false;
