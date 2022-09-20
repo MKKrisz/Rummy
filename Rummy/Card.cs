@@ -9,6 +9,7 @@ namespace Rummy
     {
         public Suit Suit;   
         public int Value;
+        public bool MustBeUsed = false;
 
         public int PointValue => GetValue();
         
