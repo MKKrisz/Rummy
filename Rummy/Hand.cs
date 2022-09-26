@@ -104,7 +104,7 @@ namespace Rummy
             
             DiscardPile.PushCard(Cards[id]);
             Cards.RemoveAt(id);
-            DiscardPile.GetCard(DiscardPile.CardsLeft - 1).MustBeUsed = true;
+            DiscardPile[DiscardPile.CardsLeft - 1].MustBeUsed = true;
             return true;
         }
 
@@ -183,7 +183,7 @@ namespace Rummy
                 Array.Sort(buffer);
                 Selection = buffer.ToList();
                 for(int i = Selection.Count-1; i>=0; i--)Cards.RemoveAt(Selection[i]);
-                for (int i = 0; i < newMeld.Cards.Count; i++) newMeld.Cards[i].MustBeUsed = true;
+                for(int i = 0; i < newMeld.Cards.Count; i++) newMeld.Cards[i].MustBeUsed = true;
             }
             if(newMeld != null){melds.Add(newMeld);}
             Selection.Clear();
@@ -195,6 +195,7 @@ namespace Rummy
             if(Score<51){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: Score is less than 51{Color.Reset}");return;}
             Card AddedCard = Cards[cardindex];
             Meld ExtendedMeld = melds[meldindex];
+            if(!ExtendedMeld.CanBeAddedTo && ExtendedMeld.PlayerID != PlayerID){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: the Owner of the meld hasn't reached the minimum score required.{Color.Reset}");return;}
             bool success = false;
             if(ExtendedMeld.Validate(AddedCard))
             {
