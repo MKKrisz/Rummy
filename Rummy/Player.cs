@@ -24,20 +24,7 @@ namespace Rummy
             int output = 0;
             for (int i = 0; i < Melds.Count; i++)
             {
-                if (Melds[i].PlayerID == ID)
-                {
-                    for (int n = 0; n < Melds[i].Cards.Count; n++)
-                    {
-                        if (Melds[i].Cards[n].Value != (int)Value.Joker) { output+=Melds[i].Cards[n].PointValue; }
-                        else
-                        {
-                            int value = 0;
-                            if (n > 0) value = Melds[i].Cards[n - 1].Value + 1;
-                            else value = Melds[i].Cards[n + 1].Value - 1;
-                            output += value;
-                        }
-                    }
-                }
+                if (Melds[i].PlayerID == ID) { output += Melds[i].Evaluate(); }
             }
             return output;
         }
