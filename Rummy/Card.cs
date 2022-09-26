@@ -7,6 +7,7 @@ namespace Rummy
     
     public class Card
     {
+        public int UID;
         public Suit Suit;   
         public int Value;
         public bool MustBeUsed = false;
@@ -19,6 +20,7 @@ namespace Rummy
                 throw new ArgumentOutOfRangeException(nameof(val));
             Suit = suit;
             Value = val;
+            UID = Program.r.Next();
         }
 
         public Card Copy()
