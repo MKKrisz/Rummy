@@ -9,10 +9,22 @@ namespace Rummy
     public abstract class Meld
     {
         public int PlayerID;
-        public int Value;
+        public int Value => Evaluate();
         public List<Card> Cards;
+        public bool CanBeAddedTo = false;
 
         public abstract bool Validate(Card c);
+        public abstract void UpdateAddableStatus(int PlayerScore);
+
+        public static void UpdateAllMeldStatus(Player P)
+        {
+            for (int i = 0; i < Program.Game.Melds.Count; i++)
+            {
+                Meld Current = Program.Game.Melds[i];
+                if (Current.PlayerID == P.ID) { Current.UpdateAddableStatus(P.Score);}
+            }
+        }
+        public abstract int Evaluate();
         public static Meld Melder(List<Card> Cards, int playerID)   //The cards should be in increasing order
         {
             Meld Output;
@@ -90,6 +102,11 @@ namespace Rummy
     public class SetMeld : Meld
     {
         public int MeldValue;
+        public override void UpdateAddableStatus(int PlayerScore)
+        {
+            if (PlayerScore >= 51) { CanBeAddedTo = true; }
+        }
+        public override int Evaluate() => Cards[0].PointValue * Cards.Count;
         public override bool Validate(Card c) 
         {
             if(c.Value == (int)Rummy.Value.Joker){return true;}
@@ -104,6 +121,33 @@ namespace Rummy
     {
         public Suit MeldSuit;
 
+        public override void UpdateAddableStatus(int PlayerScore)
+        {
+            if (PlayerScore >= 51)
+            {
+                CanBeAddedTo = true;
+            }
+        }
+        public override int Evaluate()
+        {
+            int n = 0;
+            for (int i = 0; i < Cards.Count; i++)
+            {
+                if (Cards[i].Value == (int)Rummy.Value.Joker)
+                {
+                    if(i<Cards.Count-1){n += new Card(MeldSuit, Cards[i+1].Value -1).PointValue;}
+                    else if(i>0){n += new Card(MeldSuit, Cards[i-1].Value + 1).PointValue;}
+                }
+                else if (Cards[i].Value == (int)Rummy.Value.Ace)
+                {
+                    if(i == 0){n += 1;}
+                    else n += Cards[i].PointValue;
+                }
+                else{n += Cards[i].PointValue;}
+            }
+
+            return n;
+        }
         public override bool Validate(Card c)
         {
             if(c.Value == (int)Rummy.Value.Joker){return true;}
