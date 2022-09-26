@@ -10,6 +10,7 @@ namespace Rummy
         public Shell SH;
         public int ID;
         public int Score => GetScore(Program.Game.Melds);
+        public bool First;
 
         public Player(){}
         public Player(Random r, Deck deck, int id)
