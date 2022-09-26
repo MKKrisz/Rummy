@@ -60,11 +60,11 @@ namespace Rummy
             foreach(Card card in collection) AddCard(card);
         }
 
-        public Card GetCard(int index)
+        /*public Card GetCard(int index)
         {
             if(CardsLeft == 0) return null;
             return cards[index];
-        }
+        }*/
         public Card PopCard() => CardsLeft > 0 ? RemoveCard(CardsLeft - 1) : null;
         public Card RemoveCard(int index)
         {
@@ -83,7 +83,8 @@ namespace Rummy
                     Card card = new Card((Suit)s, v);
                     // Regular cards added twice; Joker only once.
                     PushCard(card);
-                    if (v != (int)Value.Joker) { PushCard(card/*.Copy()*/); } // [Dit05] WHY was this being copied? It's literally a local variable being created JUST above this line!
+                    if (v != (int)Value.Joker) { PushCard(card.Copy()); } // [Dit05] WHY was this being copied? It's literally a local variable being created JUST above this line!
+                                                                          // [MKrisz] Beacuse reference values (I hate them)
                 }
             }
         }
