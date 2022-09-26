@@ -58,6 +58,88 @@ namespace Rummy
 
             return output.ToArray();
         }
+
+        public void Draw()
+        {
+            if (!Player.First)
+            {
+                bool c = false;
+                int n = 0;
+                int Possibilities = 3;
+                Console.WriteLine( "Where to draw from?");
+                Console.WriteLine( " Deck (Random)");
+                if(Hand.Cards.Count >= 14){Console.WriteLine($" TrumpCard {(TrumpCard != null ? TrumpCard.name : "")}"); Possibilities--;}
+                if(Player.Score >= 51){Console.WriteLine($" DiscardPile ({DiscardPile[DiscardPile.CardsLeft - 1].name})"); Possibilities--;} 
+                Console.CursorLeft = 0;
+                Console.CursorTop -= Possibilities;
+                Console.Write(">");
+                if (Possibilities == 1)
+                {
+                    if(GameDeck.CardsLeft > 0) {Hand.Cards.Add(GameDeck.Draw());}
+                    else if(TrumpCard != null) {Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;}
+                    c = true;
+                }
+                while (!c)
+                {
+                    Console.CursorVisible = false;
+                    ConsoleKey K = Console.ReadKey(true).Key;
+                    switch (K)
+                    {
+                        case ConsoleKey.UpArrow:
+                            if (n > 0)
+                            {
+                                n--;
+                                Console.CursorLeft = 0;
+                                Console.Write(" ");
+                                Console.CursorLeft = 0;
+                                Console.CursorTop--;
+                                Console.Write(">");
+                            }
+                            break;
+                        case ConsoleKey.DownArrow:
+                            if (n < Possibilities-1)
+                            {
+                                n++;
+                                Console.CursorLeft = 0;
+                                Console.Write(" ");
+                                Console.CursorLeft = 0;
+                                Console.CursorTop++;
+                                Console.Write(">");
+                            }
+                            break;
+                        case ConsoleKey.Enter:
+                            if (n == 0)
+                            {
+                                if(GameDeck.CardsLeft > 0) {Hand.Cards.Add(GameDeck.Draw()); c = true;}
+                                else if(TrumpCard != null) {Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null; c = true;}
+                            }
+
+                            if (n == 1 && TrumpCard == null) { c = false; }
+
+                            if (n == 1 && TrumpCard != null)
+                            {
+                                if(Hand.Cards.Count >= 14)
+                                {
+                                    Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;
+                                    for (int i = 0; i<Hand.Cards.Count; i++){Hand.Cards[i].MustBeUsed = true;}
+                                    c = true;
+                                }
+                            }
+                            if (n == 2) { Hand.Cards.Add(DiscardPile.PopCard()); c = true;}
+                            if(c)Console.CursorTop += (Possibilities - n);
+                            break;
+                    }
+                }
+                Console.WriteLine($"New Card: {Hand.Cards[Hand.Cards.Count-1].name}");
+                
+            }
+            else
+            {
+                Player.First = false;
+            }
+
+            Console.CursorVisible = true;
+        }
         public void StartTurn()
         {
             static bool IsParams(ParameterInfo param)
@@ -66,8 +148,14 @@ namespace Rummy
             }
             Console.Clear();
             Console.Write($"Player {PlayerID}, Round {Round}\n");
+#if RELEASE
+            Console.WriteLine("Press any key to start the turn!");
+            Console.ReadKey(true);
+#endif
             Hand.ResetUsingStatus();
             Hand.List();
+            Draw();
+            
             Console.Write("> ");
 
             List<char> Input = new List<char>();
@@ -316,11 +404,13 @@ namespace Rummy
             for (int i = 0; i < Melds.Count; i++)
             {
                 string BG = Color.Reset;
+                string FG = Color.Reset;
                 if(Melds[i].PlayerID == PlayerID){BG = Colors.Selected.AnsiBGCode;}
-                Console.Write($"{BG}{i}: ID: {Melds[i].PlayerID}\t");
+                if(!Melds[i].CanBeAddedTo && Melds[i].PlayerID != PlayerID){FG = Colors.Ignorable.AnsiFGCode;}
+                Console.Write($"{BG}{FG}{i}: ID: {Melds[i].PlayerID}\t");
                 for (int j = 0; j < Melds[i].Cards.Count; j++)
                 {
-                    Console.Write($"{Program.Suit[(int)Melds[i].Cards[j].Suit]}{BG}{Program.Value[Melds[i].Cards[j].Value]} ");
+                    Console.Write($"{Program.Suit[(int)Melds[i].Cards[j].Suit]}{BG}{FG}{Program.Value[Melds[i].Cards[j].Value]} ");
                 }
                 Console.Write($"{Color.Reset}\n");
             }
