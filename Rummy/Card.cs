@@ -11,6 +11,7 @@ namespace Rummy
         public Suit Suit;   
         public int Value;
         public bool MustBeUsed = false;
+        public string name => $"{Program.Suit[(int)Suit]}{Program.Value[Value]}";
 
         public int PointValue => GetValue();
         
