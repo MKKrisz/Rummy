@@ -42,7 +42,12 @@ namespace Rummy
                 //gets the first non-joker card, sets its suit as the MeldSuit 
                 while (Cards[n].Value == (int)Rummy.Value.Joker) { n++; }
                 sm.MeldValue = Cards[n].Value;
-
+                int m = 0;
+                for (int i = 0; i < Cards.Count; i++) 
+                {
+                    if(Cards[i].Value == (int)Rummy.Value.Joker){ m++; } 
+                    if(m>= Cards.Count/2.0){throw new Exception("Too many Jokers!");}
+                }
                 for (int i = 0; i < Cards.Count; i++)
                 {
                     if (Cards[i].Value != (int)Rummy.Value.Joker && Cards[i].Value != sm.MeldValue) {
@@ -67,6 +72,11 @@ namespace Rummy
                 //gets the first non-joker card, sets its suit as the MeldSuit
                 while (Cards[n].Value == (int)Rummy.Value.Joker) { n++; }
                 rm.MeldSuit = Cards[n].Suit;
+                int m = 0;
+                for (int i = 0; i < Cards.Count; i++) 
+                {
+                    if(Cards[i].Value == (int)Rummy.Value.Joker){ m++; } if(m>= Cards.Count/2.0){throw new Exception("Too many Jokers!");}
+                }
                 for(int i = 0; i<Cards.Count; i++)
                 {
                     if (Cards[i].Value != (int)Rummy.Value.Joker && Cards[i].Suit != rm.MeldSuit){throw new Exception("Can't have different suits in a run meld"); }
@@ -109,7 +119,17 @@ namespace Rummy
         public override int Evaluate() => Cards[0].PointValue * Cards.Count;
         public override bool Validate(Card c) 
         {
-            if(c.Value == (int)Rummy.Value.Joker){return true;}
+            if (c.Value == (int)Rummy.Value.Joker)
+            {
+                int n = 1;
+                for (int i = 0; i < Cards.Count; i++)
+                {
+                    if(Cards[i].Value == (int)Rummy.Value.Joker){ n++; }
+                    if(n >= Cards.Count/2.0){return false;}
+                }
+
+                if (n < Cards.Count / 2.0) {return true;}
+            }
             if(c.Value != MeldValue){return false;}
             for (int i = 0; i < Cards.Count; i++) { if(Cards[i].Value != (int)Rummy.Value.Joker && c.Suit == Cards[i].Suit){return false;} }
 
@@ -150,7 +170,17 @@ namespace Rummy
         }
         public override bool Validate(Card c)
         {
-            if(c.Value == (int)Rummy.Value.Joker){return true;}
+            if (c.Value == (int)Rummy.Value.Joker)
+            {
+                int n = 1;
+                for (int i = 0; i < Cards.Count; i++)
+                {
+                    if(Cards[i].Value == (int)Rummy.Value.Joker){ n++; }
+                    if(n >= Cards.Count/2.0){return false;}
+                }
+
+                if (n < Cards.Count / 2.0) {return true;}
+            }
             if(c.Suit      != MeldSuit)       {return false;}
             if(c.Value + 1 == Cards[0].Value) {return true;}
             if(c.Value - 1 == Cards[Cards.Count-1].Value){return true;}
