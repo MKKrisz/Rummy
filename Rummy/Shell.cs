@@ -240,7 +240,7 @@ namespace Rummy
                             }
                             
                             //displays a new prompt, discards last input
-                            //TODO: command history
+                            Meld.UpdateAllMeldStatus(Player);
                             Console.Write("> ");
                         }
                         else
