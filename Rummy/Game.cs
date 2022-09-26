@@ -31,6 +31,7 @@ namespace Rummy
             {
                 Players[i] = new Player(Program.r, Deck, i);
             }
+            Players[0].First = true;
         }
 
         public Card GetLastDiscard() => DiscardPile.PopCard();
@@ -39,17 +40,17 @@ namespace Rummy
         {
             while (Run)
             {
-                if (CurrentPlayer == Players.Length) {CurrentPlayer = 0;Round++;}
-                if ((CurrentPlayer != 0 || Round != 0) && Deck.CardsLeft != 0) {Players[CurrentPlayer].Hand.Cards.Add(Deck.Draw(Program.r));}
-                else if(Deck.CardsLeft == 0 && TrumpCard != null){Players[CurrentPlayer].Hand.Cards.Add(TrumpCard.Copy()); TrumpCard = null;}
-                if (Deck.CardsLeft == 0) {
+                if (CurrentPlayer == Players.Length) {CurrentPlayer = 0; Round++;}
+                Players[CurrentPlayer].SH.StartTurn();
+                if (Deck.CardsLeft == 1) {
                     Deck.AddCards(DiscardPile);
                     DiscardPile.Clear();
                 }
-                Players[CurrentPlayer].SH.StartTurn();
                 if (Players[CurrentPlayer].Hand.Cards.Count == 0)
                 {
                     Run = false;
+                    Console.WriteLine($"Congratulations! Player {CurrentPlayer} Wins!!");
+                    Console.ReadKey(true);
                 }
 
 
