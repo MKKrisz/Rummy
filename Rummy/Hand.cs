@@ -192,9 +192,9 @@ namespace Rummy
         [PlayerInvokable(Name = "Add", Description = "Tries to extend a selected meld with the given card")]
         public void Add(List<Meld> melds, int Score , int meldindex, int cardindex)
         {
-            if(Score<51){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: Score is less than 51{Color.Reset}");return;}
             Card AddedCard = Cards[cardindex];
             Meld ExtendedMeld = melds[meldindex];
+            if(Score<51 && ExtendedMeld.PlayerID != PlayerID){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: Score is less than 51{Color.Reset}");return;}
             if(!ExtendedMeld.CanBeAddedTo && ExtendedMeld.PlayerID != PlayerID){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: the Owner of the meld hasn't reached the minimum score required.{Color.Reset}");return;}
             bool success = false;
             if(ExtendedMeld.Validate(AddedCard))
