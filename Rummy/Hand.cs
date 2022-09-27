@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Rummy.TextColor;
@@ -190,7 +189,7 @@ namespace Rummy
         }
 
         [PlayerInvokable(Name = "Add", Description = "Tries to extend a selected meld with the given card")]
-        public void Add(List<Meld> melds, int Score , int meldindex, int cardindex)
+        public void Add([AutoCompleteParameter]List<Meld> melds,[AutoCompleteParameter]int Score , int meldindex, int cardindex)
         {
             Card AddedCard = Cards[cardindex];
             Meld ExtendedMeld = melds[meldindex];
@@ -246,7 +245,7 @@ namespace Rummy
 
                     if (AddedCard.Value == (int)Value.Joker)
                     {
-                        Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: The Joker card yoou referenced WILL be used up.{Colors.Important.AnsiFGCode} Proceed? [y/N] ");
+                        Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: The Joker card youuu referenced WILL be used up.{Colors.Important.AnsiFGCode} Proceed? [y/N] ");
                         char input = Console.ReadKey(false).KeyChar;
                         Console.Write("\n");
                         if (input == 'y')
@@ -257,6 +256,7 @@ namespace Rummy
                             if (input == 'y')
                             {
                                 rm.Cards.Add(AddedCard);
+                                
                                 Console.WriteLine($"{Colors.Important.AnsiFGCode} Card placed at the end of the meld{Color.Reset}");
                             }
                             else
@@ -264,7 +264,7 @@ namespace Rummy
                                 rm.Cards.Insert(0, AddedCard);
                                 Console.WriteLine($"{Colors.Important.AnsiFGCode} Card placed at the start of the meld{Color.Reset}");
                             }
-
+                            Cards.RemoveAt(cardindex);    
                             success = true;
                         }
                     }
