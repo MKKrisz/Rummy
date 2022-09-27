@@ -64,12 +64,15 @@ namespace Rummy
             if (!Player.First)
             {
                 bool c = false;
+                bool CanUseTrumpCard = false;
                 int n = 0;
                 int Possibilities = 3;
                 Console.WriteLine( "Where to draw from?");
                 Console.WriteLine( " Deck (Random)");
-                if(Hand.Cards.Count >= 14){Console.WriteLine($" TrumpCard {(TrumpCard != null ? TrumpCard.name : "")}"); Possibilities--;}
-                if(Player.Score >= 51){Console.WriteLine($" DiscardPile ({DiscardPile[DiscardPile.CardsLeft - 1].name})"); Possibilities--;} 
+                if(Hand.Cards.Count >= 14){Console.WriteLine($" TrumpCard {(TrumpCard != null ? TrumpCard.name : "")}"); CanUseTrumpCard = true;}
+                else{Possibilities--;};
+                if (Player.Score >= 51) { Console.WriteLine($" DiscardPile ({DiscardPile[DiscardPile.CardsLeft - 1].name})"); }
+                else {Possibilities--;}
                 Console.CursorLeft = 0;
                 Console.CursorTop -= Possibilities;
                 Console.Write(">");
@@ -78,6 +81,7 @@ namespace Rummy
                     if(GameDeck.CardsLeft > 0) {Hand.Cards.Add(GameDeck.Draw());}
                     else if(TrumpCard != null) {Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;}
                     c = true;
+                    Console.CursorTop++;
                 }
                 while (!c)
                 {
@@ -114,9 +118,9 @@ namespace Rummy
                                 else if(TrumpCard != null) {Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null; c = true;}
                             }
 
-                            if (n == 1 && TrumpCard == null) { c = false; }
+                            if (n == 1 && CanUseTrumpCard && TrumpCard == null) { c = false; }
 
-                            if (n == 1 && TrumpCard != null)
+                            if (n == 1 && CanUseTrumpCard && TrumpCard != null)
                             {
                                 if(Hand.Cards.Count >= 14)
                                 {
@@ -125,7 +129,8 @@ namespace Rummy
                                     c = true;
                                 }
                             }
-                            if (n == 2) { Hand.Cards.Add(DiscardPile.PopCard()); c = true;}
+                            if (n == 1 && !CanUseTrumpCard){ Hand.Cards.Add(DiscardPile.PopCard()); c = true;}
+                            if (n == 2 && CanUseTrumpCard) { Hand.Cards.Add(DiscardPile.PopCard()); c = true;}
                             if(c)Console.CursorTop += (Possibilities - n);
                             break;
                     }
@@ -346,7 +351,7 @@ namespace Rummy
             }
         }
 
-        [PlayerInvokable(Name = "Help", Description = "Displays this message")]
+        [PlayerInvokable(Name = "Help", Description = "Displays this message. If given an argument, displays required params")]
         public void Help(string s = null)
         {
             bool success = false;
@@ -404,7 +409,7 @@ namespace Rummy
             for (int i = 0; i < Melds.Count; i++)
             {
                 string BG = Color.Reset;
-                string FG = Color.Reset;
+                string FG = Colors.Text.AnsiFGCode;
                 if(Melds[i].PlayerID == PlayerID){BG = Colors.Selected.AnsiBGCode;}
                 if(!Melds[i].CanBeAddedTo && Melds[i].PlayerID != PlayerID){FG = Colors.Ignorable.AnsiFGCode;}
                 Console.Write($"{BG}{FG}{i}: ID: {Melds[i].PlayerID}\t");
