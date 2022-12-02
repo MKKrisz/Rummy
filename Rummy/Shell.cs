@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Rummy.TextColor;
@@ -12,20 +11,23 @@ namespace Rummy
         public int PlayerID;
         
         //method parameters which don't require to be input
-        private static readonly Type[] AutoCompleteArgs = { typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card), typeof(List<Meld>), typeof(int)/* you will murder me for this*/};
+        private static readonly Type[] AutoCompleteArgs = {typeof(Player), typeof(Deck), typeof(Hand), typeof(List<Card>), typeof(Card), typeof(List<Meld>), typeof(int)/* you will murder me for this*/};
         
         
         //references to all needed variables
         private Hand Hand;                                          //reference to the player's hand
         private Player Player;
+        private List<Card> Cards => Hand.Cards;
         private int Score => Player.Score;
-        int Round => Program.Game.Round;
-        Deck GameDeck => Program.Game.Deck;                         //reference to the game deck
-        Deck DiscardPile => Program.Game.DiscardPile;         //reference to the discard pile, for picking it up, or for ending the turn
-        Card TrumpCard => Program.Game.TrumpCard;
+        private int Round => Program.Game.Round;
+        private Deck GameDeck => Program.Game.Deck;                         //reference to the game deck
+        private int CardsLeft => GameDeck.CardsLeft;
+        private Deck DiscardPile => Program.Game.DiscardPile;         //reference to the discard pile, for picking it up, or for ending the turn
+        private Card TrumpCard => Program.Game.TrumpCard;
         private List<Meld> Melds => Program.Game.Melds;
+        private List<PlayerInvokable> Methods => PlayerInvokableContainer.Methods;
 
-
+        private string PS1 = "> ";
         public Shell(Player P)
         {
             PlayerID = P.ID;
@@ -35,18 +37,17 @@ namespace Rummy
         }
 
         List<string> History = new List<string>();
+        
+        
         //the search script used
         //TODO: search/autocomplete on method parameters
-        PlayerInvokable[] Search(string input, bool exact)
-        {
+        PlayerInvokable[] Search(string input, bool exact) {
             List<PlayerInvokable> output = new List<PlayerInvokable>();
-            List<PlayerInvokable> query = PlayerInvokableContainer.Methods;
-            for (int i = 0; i < query.Count(); i++)
-            {
+            List<PlayerInvokable> query = Methods;
+            for (int i = 0; i < query.Count(); i++) {
                 string sample = "";
                 //if "exact" switch is not set, only compares the length of the input 
-                if (!exact)
-                {
+                if (!exact) {
                     try   {sample = query[i].Name.Remove(input.Length);}
                     catch {sample = query[i].Name;}
                 }
@@ -55,44 +56,40 @@ namespace Rummy
                 //if method (or its partial) name and input match, add it to output
                 if(input.ToLower() == sample.ToLower()){output.Add(query[i]);}
             }
-
             return output.ToArray();
         }
 
-        public void Draw()
-        {
-            if (!Player.First)
-            {
-                bool c = false;
-                bool CanUseTrumpCard = false;
-                int n = 0;
+        public void Draw() {
+            if (!Player.First) {
+                bool chose = false;
+                bool CanUseTrumpCard = Cards.Count >= Constants.MaxCardCount && TrumpCard != null;
+                int CursorState = 0;
                 int Possibilities = 3;
+                
+                //TODO:(design) do the choosing with \t 
                 Console.WriteLine( "Where to draw from?");
                 Console.WriteLine( " Deck (Random)");
-                if(Hand.Cards.Count >= 14){Console.WriteLine($" TrumpCard {(TrumpCard != null ? TrumpCard.name : "")}"); CanUseTrumpCard = true;}
-                else{Possibilities--;};
-                if (Player.Score >= 51) { Console.WriteLine($" DiscardPile ({DiscardPile[DiscardPile.CardsLeft - 1].name})"); }
+                if(CanUseTrumpCard){Console.WriteLine($" TrumpCard {TrumpCard.name}");}
+                else {Possibilities--;}
+                if (Score >= Constants.MinMeldScore) { Console.WriteLine($" DiscardPile ({DiscardPile[DiscardPile.CardsLeft - 1].name})"); }         //TODO: Refactor this when refactoring DiscardPile
                 else {Possibilities--;}
                 Console.CursorLeft = 0;
                 Console.CursorTop -= Possibilities;
                 Console.Write(">");
-                if (Possibilities == 1)
-                {
-                    if(GameDeck.CardsLeft > 0) {Hand.Cards.Add(GameDeck.Draw());}
-                    else if(TrumpCard != null) {Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;}
-                    c = true;
+                if (Possibilities == 1) {
+                    if(CardsLeft > 0) {Cards.Add(GameDeck.Draw());}
+                    else if(TrumpCard != null) {Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;}
+                    chose = true;
                     Console.CursorTop++;
                 }
-                while (!c)
-                {
+                while (!chose) {
                     Console.CursorVisible = false;
                     ConsoleKey K = Console.ReadKey(true).Key;
-                    switch (K)
-                    {
+                    switch (K) {
+                        //TODO: Do something with this, this is ugly
                         case ConsoleKey.UpArrow:
-                            if (n > 0)
-                            {
-                                n--;
+                            if (CursorState > 0) {
+                                CursorState--;
                                 Console.CursorLeft = 0;
                                 Console.Write(" ");
                                 Console.CursorLeft = 0;
@@ -101,9 +98,8 @@ namespace Rummy
                             }
                             break;
                         case ConsoleKey.DownArrow:
-                            if (n < Possibilities-1)
-                            {
-                                n++;
+                            if (CursorState < Possibilities-1) {
+                                CursorState++;
                                 Console.CursorLeft = 0;
                                 Console.Write(" ");
                                 Console.CursorLeft = 0;
@@ -112,45 +108,39 @@ namespace Rummy
                             }
                             break;
                         case ConsoleKey.Enter:
-                            if (n == 0)
-                            {
-                                if(GameDeck.CardsLeft > 0) {Hand.Cards.Add(GameDeck.Draw()); c = true;}
-                                else if(TrumpCard != null) {Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null; c = true;}
+                            if (CursorState == 0) {
+                                if(CardsLeft > 0) {Cards.Add(GameDeck.Draw()); chose = true;}
+                                else if(TrumpCard != null) {Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null; chose = true;}
                             }
 
-                            if (n == 1 && CanUseTrumpCard && TrumpCard == null) { c = false; }
+                            //This line seems redundant
+                            //if (CursorState == 1 && CanUseTrumpCard && TrumpCard == null) { chose = false; }
 
-                            if (n == 1 && CanUseTrumpCard && TrumpCard != null)
-                            {
-                                if(Hand.Cards.Count >= 14)
+                            if (CursorState == 1 && CanUseTrumpCard && TrumpCard != null) { 
+                                if(Cards.Count >= Constants.MaxCardCount)
                                 {
-                                    Hand.Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;
-                                    for (int i = 0; i<Hand.Cards.Count; i++){Hand.Cards[i].MustBeUsed = true;}
-                                    c = true;
+                                    Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;
+                                    for (int i = 0; i<Cards.Count; i++){Cards[i].MustBeUsed = true;}
+                                    chose = true;
                                 }
                             }
-                            if (n == 1 && !CanUseTrumpCard){ Hand.Cards.Add(DiscardPile.PopCard()); c = true;}
-                            if (n == 2 && CanUseTrumpCard) { Hand.Cards.Add(DiscardPile.PopCard()); c = true;}
-                            if(c)Console.CursorTop += (Possibilities - n);
+                            if (CursorState == 1 && !CanUseTrumpCard){ Cards.Add(DiscardPile.PopCard()); chose = true;}
+                            if (CursorState == 2 && CanUseTrumpCard) { Cards.Add(DiscardPile.PopCard()); chose = true;}
+                            if(chose)Console.CursorTop += (Possibilities - CursorState);
                             break;
                     }
                 }
-                Console.WriteLine($"New Card: {Hand.Cards[Hand.Cards.Count-1].name}");
-                
+                Console.WriteLine($"New Card: {Cards[^1].name}");
             }
-            else
-            {
+            else {
                 Player.First = false;
             }
-
             Console.CursorVisible = true;
         }
         public void StartTurn()
         {
-            static bool IsParams(ParameterInfo param)
-            {
-                return param.GetCustomAttributes(typeof (ParamArrayAttribute), false).Length > 0;
-            }
+            static bool IsParams(ParameterInfo param) => param.GetCustomAttributes(typeof (ParamArrayAttribute), false).Length > 0;
+
             Console.Clear();
             Console.Write($"Player {PlayerID}, Round {Round}\n");
 #if RELEASE
@@ -159,25 +149,23 @@ namespace Rummy
 #endif
             Hand.ResetUsingStatus();
             Hand.List();
+            
             Draw();
             
-            Console.Write("> ");
+            Console.Write(PS1);
 
             List<char> Input = new List<char>();
             int HistoryIndex = 0;
-            History[0] = "";
             bool run = true;
-            while (run)
-            {
+
+            while (run) {
                 ConsoleKeyInfo key = Console.ReadKey(true);
                 PlayerInvokable[] matches;
                 //checks if pressed key is one of the ones below
-                switch (key.Key)
-                {
+                switch (key.Key) {
                     case ConsoleKey.Backspace:
                         //deletes last char of input, and rewrites it with a ' '(space) on the screen
-                        if (Input.Count > 0)
-                        {
+                        if (Input.Count > 0) {
                             Input.RemoveAt(Input.Count()-1);
                             Console.CursorLeft--;
                             Console.Write(" ");
@@ -187,9 +175,8 @@ namespace Rummy
                     case ConsoleKey.Tab:
                         //searches if there is a match to the input, if there is only one, autocompletes
                         matches = Search(new string(Input.ToArray()), false);
-                        if (matches.Length == 1)
-                        {
-                            Input = matches[0].Name.ToCharArray().ToList();
+                        if (matches.Length == 1) {
+                            Input = matches[0].Name.ToList();
                             Console.CursorLeft = 2;
                             Console.Write(new string(Input.ToArray()));
                         }
@@ -197,41 +184,40 @@ namespace Rummy
                         break;
                     case ConsoleKey.UpArrow:
                         HistoryIndex++;
-                        try
-                        {
-                            Input = History[HistoryIndex].ToCharArray().ToList();
-                            while(Console.CursorLeft != 0){Console.CursorLeft--;
+                        try {
+                            Input = History[HistoryIndex].ToList();
+                            while(Console.CursorLeft != 0){
+                                Console.CursorLeft--;
                                 Console.Write(" ");
                                 Console.CursorLeft--;
                             }
                             Console.Write(" ");
                             Console.CursorLeft--;
-                            Console.Write($"> {History[HistoryIndex]}");
+                            Console.Write(PS1 + History[HistoryIndex]);
                         }
                         catch{Console.Write("\a"); HistoryIndex = History.Count-1;}
 
                         break;
                     case ConsoleKey.DownArrow:
                         HistoryIndex--;
-                        try
-                        {
-                            Input = History[HistoryIndex].ToCharArray().ToList();
-                            while(Console.CursorLeft != 0){Console.CursorLeft--;
+                        try {
+                            Input = History[HistoryIndex].ToList();
+                            while(Console.CursorLeft != 0){
+                                Console.CursorLeft--;
                                 Console.Write(" ");
                                 Console.CursorLeft--;
                             }
                             Console.Write(" ");
                             Console.CursorLeft--;
-                            Console.Write($"> {History[HistoryIndex]}");
+                            Console.Write(PS1 + History[HistoryIndex]);
                         }
                         catch{Console.Write("\a"); HistoryIndex = 0;}
 
                         break;
                     case ConsoleKey.Enter:
-                        if(Input.Count() == 0) {break;}
+                        if(!Input.Any()) {break;}
                         History.Insert(1, new string(Input.ToArray()));
                         HistoryIndex = 0;
-                        //searches if there is (only) one exact mach for the given input, if there is, invokes it
                         
                         //splits up the string 
                         //should not give back null, as it is checked for a few lines above
@@ -243,22 +229,20 @@ namespace Rummy
                         b.RemoveAt(0);
                         string[] RawArgs = b.ToArray();
                         
+                        //searches if there is (only) one exact mach for the given input, if there is, invokes it
                         matches = Search(command, true);
-                        if (matches.Length == 1)
-                        {
+                        if (matches.Length == 1) {
                             Console.Write("\n");
                             
-                            //makes reading a bit easier (otherwise unnecessary line)
+                            //makes reading a bit easier (otherwise unnecessary line)           I sometimes hate my old self for dumbass shit like this.... I mean, who would've thought this would turn out to be this big??
                             PlayerInvokable match = matches[0];
                             //---------------------------------
                             
                             //Creates an array with the length of the method(match)'s parameters 
                             object[] Args = new object[match.Params.Length];
                             int j = 0;
-                            for (int i = 0; i < Args.Length; i++)
-                            {
-                                
-                                ParameterInfo CurrentParameter = match.Params[i];
+                            //for (int i = 0; i < Args.Length; i++) {
+                            foreach (ParameterInfo CurrentParameter in match.Params){
                                 bool completed = false;
 
                                 //if the parameter's type is in AutocompleteArgs, autocomplete  
@@ -270,34 +254,36 @@ namespace Rummy
                                     //If you wish to add new autocompleted variables to the array above, DON'T forget to add functionality here!!
                                     
                                     //----------------------------!!---------------------------------------------
+                                    if(t == typeof(Hand))            {Args[CurrentParameter.Position] = Hand;      completed = true;}
+                                    if(t == typeof(Card))            {Args[CurrentParameter.Position] = TrumpCard; completed = true;}
+                                    if(t == typeof(List<Meld>))      {Args[CurrentParameter.Position] = Melds;     completed = true;}
+                                    if(t == typeof(int) && CurrentParameter.Name == "Score")                         {Args[CurrentParameter.Position] = Score;       completed = true;}
+                                    
                                     if(t == typeof(Deck) && CurrentParameter.Name == "DiscardPile" /* HACK */)       {Args[CurrentParameter.Position] = DiscardPile; completed = true;}
-                                    else if(t == typeof(Deck))       {Args[CurrentParameter.Position] = GameDeck; completed = true;}
-                                    if(t == typeof(Hand))       {Args[CurrentParameter.Position] = Hand; completed = true;}
-                                    if(t == typeof(Card))       {Args[CurrentParameter.Position] = TrumpCard; completed = true;}
-                                    if(t == typeof(List<Meld>)) {Args[CurrentParameter.Position] = Melds; completed = true;}
-                                    if(t == typeof(int) && CurrentParameter.Name == "Score")                         {Args[CurrentParameter.Position] = Score; completed = true;}
+                                    else if(t == typeof(Deck))       {Args[CurrentParameter.Position] = GameDeck;  completed = true;}
+                                    
+                                    if(t == typeof(Player))          {Args[CurrentParameter.Position] = Player;    completed = true;}
                                     //----------------------------!!---------------------------------------------
                                 }
-                                if(!completed)
-                                {
-                                    if (IsParams(CurrentParameter))
-                                    {
+                                if(!completed) {
+                                    if (IsParams(CurrentParameter)) {
                                         //TODO: global params [] parameter conversion 
                                         Type T = CurrentParameter.ParameterType.GetElementType();
                                         List<object> list = new List<object>();
-                                        for (int k = j; k < RawArgs.Length; k++)
-                                        {
+                                        
+                                        for (int k = j; k < RawArgs.Length; k++) {
                                             list.Add(Convert.ChangeType(RawArgs[k], T));
                                         }
                                         Args[CurrentParameter.Position] = list.ToArray();
                                         j = RawArgs.Length;
                                     }
 
-                                    if (RawArgs.Length > j && RawArgs[j] != null)
-                                    {
+                                    if (RawArgs.Length > j && RawArgs[j] != null) {
+                                        string currentRawArgument = RawArgs[j];
                                         try{
-                                            if (CurrentParameter.ParameterType.IsEnum) { Args[CurrentParameter.Position] = Enum.Parse(CurrentParameter.ParameterType, RawArgs[j], true); j++;}
-                                            else {Args[CurrentParameter.Position] = Convert.ChangeType(RawArgs[j], CurrentParameter.ParameterType); j++;}
+                                            if (CurrentParameter.ParameterType.IsEnum) { Args[CurrentParameter.Position] = Enum.Parse(CurrentParameter.ParameterType, currentRawArgument, true);}
+                                            else {Args[CurrentParameter.Position] = Convert.ChangeType(currentRawArgument, CurrentParameter.ParameterType);}
+                                            j++;
                                         }
                                         catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
                                     }
@@ -312,7 +298,7 @@ namespace Rummy
                             bool failed = false;
                             object ReturnValue = null;
                             try {
-                                if (match.Info.DeclaringType == typeof(Hand)) ReturnValue = match.Invoke(Args.ToList(), instance: Hand);
+                                if (match.Info.DeclaringType == typeof(Hand))       ReturnValue = match.Invoke(Args.ToList(), instance: Hand);
                                 else if (match.Info.DeclaringType == typeof(Shell)) ReturnValue = match.Invoke(Args.ToList(), instance: this);
                                 else ReturnValue = match.Invoke(Args.ToList());
                             }
@@ -326,15 +312,14 @@ namespace Rummy
                                                        // [MKKrisz] It actually does not clear the console, it just creates a new prompt so you can continue, so this feature is only an attention-grabber
                             }
                             //Checks if the invoked function has the "TurnEnder" attribute, if yes, exits this loop, and thus, ending the player's turn
-                            if (!failed && match.Info.GetCustomAttributes().OfType<TurnEnder>().Any())
-                            {
-                                if(ReturnValue is bool rv && rv == true)run = false;
+                            if (!failed && match.Info.GetCustomAttributes().OfType<TurnEnder>().Any()) {
+                                if(ReturnValue is true){run = false;}
                                 if(ReturnValue == null){run = false;}
                             }
                             
                             //displays a new prompt, discards last input
                             Meld.UpdateAllMeldStatus(Player);
-                            Console.Write("> ");
+                            Console.Write(PS1);
                         }
                         else
                         {
@@ -352,20 +337,16 @@ namespace Rummy
         }
 
         [PlayerInvokable(Name = "Help", Description = "Displays this message. If given an argument, displays required params")]
-        public void Help(string s = null)
-        {
+        public void Help(string s = null) {
             bool success = false;
-            if (s != null)
-            {
+            if (s != null) {
                 PlayerInvokable[] matches = Search(s, exact: true);
-                if (matches.Length == 1)
-                {
+                if (matches.Length == 1) {
                     success = true;
                     PlayerInvokable match = matches[0];
                     Console.WriteLine($"{match.Name}:\t{match.Description}");
                     if(match.Params.Length != 0){Console.WriteLine("Parameters:");}
-                    for (int i = 0; i < match.Params.Length; i++)
-                    {
+                    for (int i = 0; i < match.Params.Length; i++) {
                         Console.Write($"{i}:\t");
                         if(match.Params[i].GetCustomAttributes().OfType<AutoCompleteParameter>().Any()){Console.Write($"{Colors.Ignorable.AnsiFGCode}(AutoCompleted) ");}
                         Console.Write($"{match.Params[i].Name}\t{match.Params[i].ParameterType}\u001b[m");
@@ -376,9 +357,9 @@ namespace Rummy
             }
             if(!success)
             {
-                for (int i = 0; i < PlayerInvokableContainer.Methods.Count; i++)
+                for (int i = 0; i < Methods.Count; i++)
                 {
-                    Console.WriteLine($"{PlayerInvokableContainer.Methods[i].Name}\t\t{PlayerInvokableContainer.Methods[i].Description}");
+                    Console.WriteLine($"{Methods[i].Name}\t\t{Methods[i].Description}");
                 }
             }
         }
@@ -390,11 +371,18 @@ namespace Rummy
         [TurnEnder]
         public void Exit(bool save = false)
         {
-            //TODO: save
             if(save == true){Save_Load.Save(Program.Game);}
 
             Program.Game.Run = false;
             Program.Run = false;
+        }
+
+        [PlayerInvokable(Name = "Reload",
+            Description = "Reloads the last saved gamestate, usually sets you back to the start of your turn")]
+        [TurnEnder]
+        public void Reload() {
+            Save_Load.Load(Save_Load.LastSavePath);
+            Program.Game.CurrentPlayerId--;
         }
 
         [TurnEnder]
@@ -415,7 +403,7 @@ namespace Rummy
                 Console.Write($"{BG}{FG}{i}: ID: {Melds[i].PlayerID}\t");
                 for (int j = 0; j < Melds[i].Cards.Count; j++)
                 {
-                    Console.Write($"{Program.Suit[(int)Melds[i].Cards[j].Suit]}{BG}{FG}{Program.Value[Melds[i].Cards[j].Value]} ");
+                    Console.Write($"{Constants.Suit[(int)Melds[i].Cards[j].Suit]}{BG}{FG}{Constants.Value[Melds[i].Cards[j].Value]} ");
                 }
                 Console.Write($"{Color.Reset}\n");
             }
