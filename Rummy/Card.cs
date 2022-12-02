@@ -11,7 +11,7 @@ namespace Rummy
         public Suit Suit;   
         public int Value;
         public bool MustBeUsed = false;
-        public string name => $"{Program.Suit[(int)Suit]}{Program.Value[Value]}";
+        public string name => $"{Constants.Suit[(int)Suit]}{Constants.Value[Value]}";
 
         public int PointValue => GetValue();
         
@@ -21,7 +21,7 @@ namespace Rummy
                 throw new ArgumentOutOfRangeException(nameof(val));
             Suit = suit;
             Value = val;
-            UID = Program.r.Next();
+            UID = Constants.Random.Next();
         }
 
         public Card Copy()
@@ -29,6 +29,8 @@ namespace Rummy
             Card cp = (Card)this.MemberwiseClone();
             return cp;
         }
+
+        public bool IsJoker => Value == (int)Rummy.Value.Joker;
         private int GetValue()
         {
             if (Value >  10 || Value == 1) { return 10; }
