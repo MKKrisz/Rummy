@@ -6,27 +6,24 @@ namespace Rummy
     /// Holds cards.
     public class Deck : IEnumerable<Card>
     {
-        const int SUIT_COUNT = 4;
-        private int values = 14;            //Number of different values  (ex.: A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Joker)
+        int SUIT_COUNT => Constants.Suit.Length;
+        private int values => Constants.Value.Length;            //Number of different values  (ex.: A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Joker)
 
         //private int[,] Cards; // Kept commented here as a source of shame
-        private readonly List<Card> cards = new List<Card>();
+        public readonly List<Card> cards = new List<Card>();
         public int CardsLeft => cards.Count;
 
-        public Card this[int index]
-        {
+        public Card this[int index] {
             get => cards[index];
         }
 
         public IEnumerator<Card> GetEnumerator() => cards.GetEnumerator();
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator(); // [Dit05] This might look arcane, but it's only because it IS arcane.
 
-        private static readonly Random shuffler = Program.r;
+        private static readonly Random shuffler = Constants.Random;
 
-        public Deck(bool fill)
-        {
-            if (fill)
-            {
+        public Deck(bool fill) {
+            if (fill) {
                 Populate();
                 Shuffle();
             }
