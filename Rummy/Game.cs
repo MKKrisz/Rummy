@@ -5,7 +5,6 @@ using System.Reflection;
 
 namespace Rummy
 {
-    [Serializable]
     public class Game 
     {
         public Player[] Players;
@@ -15,21 +14,26 @@ namespace Rummy
         public List<Meld> Melds = new List<Meld>();
 
         public int Round;
-        public int CurrentPlayer = 0;
+        public int CurrentPlayerId = 0;
         public bool Run = true;
         
         public Game(){}
 
-        public Game(int PlayerAmount)
-        {
+        public Game(int PlayerAmount, int seed = -1) {
+            if (seed == -1) {
+                Constants.Random = new Random();
+            }
+            else {
+                Constants.Random = new Random(seed);
+            }
             Players = new Player[PlayerAmount];
             Deck = new Deck(true);
-            TrumpCard = Deck.Draw(Program.r);
+            TrumpCard = Deck.Draw(Constants.Random);
             TrumpCard.MustBeUsed = true;
             
             for (int i = 0; i < PlayerAmount; i++)
             {
-                Players[i] = new Player(Program.r, Deck, i);
+                Players[i] = new Player(Constants.Random, Deck, i);
             }
             Players[0].First = true;
         }
@@ -40,21 +44,23 @@ namespace Rummy
         {
             while (Run)
             {
-                if (CurrentPlayer == Players.Length) {CurrentPlayer = 0; Round++;}
-                Players[CurrentPlayer].SH.StartTurn();
+                if (CurrentPlayerId == Players.Length) {CurrentPlayerId = 0; Round++;}
+
+                Player CP = Players[CurrentPlayerId];
+                CP.StartTurn();
                 if (Deck.CardsLeft == 1) {
                     Deck.AddCards(DiscardPile);
                     DiscardPile.Clear();
                 }
-                if (Players[CurrentPlayer].Hand.Cards.Count == 0)
+                if (CP.Cards.Count == 0)
                 {
                     Run = false;
-                    Console.WriteLine($"Congratulations! Player {CurrentPlayer} Wins!!");
+                    Console.WriteLine($"Congratulations! Player {CurrentPlayerId} Wins!!");
                     Console.ReadKey(true);
                 }
 
 
-                CurrentPlayer++;
+                CurrentPlayerId++;
             }
         }
     }
