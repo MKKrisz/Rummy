@@ -31,10 +31,14 @@ namespace Rummy
             TrumpCard = Deck.Draw(Constants.Random);
             TrumpCard.MustBeUsed = true;
             
-            for (int i = 0; i < PlayerAmount; i++)
-            {
+            for (int i = 0; i < PlayerAmount; i++) {
                 Players[i] = new Player(Constants.Random, Deck, i);
             }
+
+            if (TrumpCard.IsJoker) {
+                (TrumpCard, Players[PlayerAmount - 2].Cards[0]) = (Players[PlayerAmount - 2].Cards[0], TrumpCard);      //I guess cleaner, Rider suggested it
+            }
+
             Players[0].First = true;
         }
 
