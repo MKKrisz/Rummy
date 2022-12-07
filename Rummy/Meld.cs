@@ -60,6 +60,12 @@ namespace Rummy
             }
             if (Output is RunMeld rm) {
                 Cards = Card.Sort(Cards.ToArray(), Hand.SortType.Value).ToList();
+                if (Cards[0].Value == (int)Rummy.Value.Ace) {
+                    if (Cards[1].Value != (int)Rummy.Value.N2) {
+                        Cards.Add(Cards[0]);
+                        Cards.RemoveAt(0);
+                    }
+                }
 
                 int firstNonJoker = 0;
                 //gets the first non-joker card, sets its suit as the MeldSuit
@@ -73,7 +79,7 @@ namespace Rummy
                 
                     if (!Cards[i].IsJoker && Cards[i].Suit != rm.MeldSuit){throw new Exception("Can't have different suits in a run meld"); }
 
-                    if (i > 0 && !Cards[i].IsJoker && !Cards[i - 1].IsJoker && Cards[i - 1].Value != Cards[i].Value - 1) {
+                    if (i > 0 && !Cards[i].IsJoker && !Cards[i - 1].IsJoker && Cards[i - 1].Value != (Cards[i].Value == (int)Rummy.Value.Ace ? (int)Rummy.Value.King : Cards[i].Value - 1)) {
                         if (Cards[0].IsJoker) {
                             Card Joker = Cards[0];
                             Cards.RemoveAt(0);
@@ -149,14 +155,39 @@ namespace Rummy
             if(c.Value + 1 == Cards[0].Value) {return true;}
             if(c.Value - 1 == Cards[^1].Value){return true;}
 
+            if (c.Value == (int)Rummy.Value.Ace) {
+                if (Cards[^1].Value == (int)Rummy.Value.King) {
+                    return true;
+                }
+                if (Cards[0].Value == (int)Rummy.Value.N2) {
+                    return true;
+                }
+            }
+
             if (Cards[0].IsJoker) {
                 Card JokerSubstitute = new Card(MeldSuit, Cards[1].Value - 1);
                 if(c.Value + 1 == JokerSubstitute.Value){return true;}
+                if (c.Value == (int)Rummy.Value.Ace) {
+                    if (JokerSubstitute.Value == (int)Rummy.Value.King) {
+                        return true;
+                    }
+                    if (JokerSubstitute.Value == (int)Rummy.Value.N2) {
+                        return true;
+                    }
+                }
             }
             
             if (Cards[^1].Value == (int)Rummy.Value.Joker) {
                 Card JokerSubstitute = new Card(MeldSuit, Cards[^2].Value + 1);
                 if(c.Value - 1 == JokerSubstitute.Value){return true;}
+                if (c.Value == (int)Rummy.Value.Ace) {
+                    if (JokerSubstitute.Value == (int)Rummy.Value.King) {
+                        return true;
+                    }
+                    if (JokerSubstitute.Value == (int)Rummy.Value.N2) {
+                        return true;
+                    }
+                }
             }
             for(int i = 0; i<Cards.Count; i++){
                 if (Cards[i].Value == (int)Rummy.Value.Joker) {
