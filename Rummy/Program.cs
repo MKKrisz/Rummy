@@ -30,13 +30,16 @@ namespace Rummy
             int CursorPos = 0;
             while (Run) {
                 if (NewGame && !LoadGame) {
+                    Console.Clear();
                     Console.Write("How Many Players?\n> ");
                     int Players;
                     string input = Console.ReadLine();
-                    bool valid = Int32.TryParse(input, out Players) && (Players is < 6 and > 0);
+                    bool valid = Int32.TryParse(input, out Players) && (Players is < 6 and > 1);
                     if (valid) {
                         Game = new Game(Players);
                         Game.Loop();
+                        NewGame = false;
+			Save_Load.LastSavePath = "";
                     }
 
                     if (!valid && input != null) {
@@ -66,6 +69,7 @@ namespace Rummy
                 }
 
                 if (!NewGame && !LoadGame) {
+                    Console.Clear();
                     Console.SetCursorPosition(0, 0);
                     Console.WriteLine("Rummy");
                     Console.WriteLine(" New Game");
