@@ -10,6 +10,8 @@ namespace Rummy
         public readonly List<Card> Cards = new List<Card>();
         public List<int> Selection = new List<int>();
         public int PlayerID;
+        public bool HasDrawn = false;
+        public bool WasFirst = false;
         public bool CanEndTurn => !Cards.Any(x => x.MustBeUsed);
 
         public Hand(Random r, Deck deck, bool firstPlayer, int playerId) {
@@ -71,7 +73,11 @@ namespace Rummy
         [PlayerInvokable(Name = "Discard", Description = "Discards a card, and thus ends the turn. Given \"n\" negative index, discards the last |n|-th card")]
         public bool Discard([AutoCompleteParameter]Deck DiscardPile, int id = -1) {
             if(id < 0){id = Cards.Count + id;}
-            
+
+            if (!HasDrawn && !WasFirst) {
+                Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Player has not drawn{Colors.Reset}");
+                return false;
+            } 
             if(DiscardPile == null) throw new Exception("Discard pile is null");
             while (id >= Cards.Count) {
                 Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: Invalid index. Give a valid number to proceed, or \"cancel\" to cancel the action{Colors.Reset}\nNew Number> ");
@@ -122,7 +128,7 @@ namespace Rummy
                 //TODO: Refactor this try-catch
                 try {
                     int s;
-                    if((s = Convert.ToInt32(newSelection[i]))<Cards.Count && s>0) Selection.Add(s);
+                    if((s = Convert.ToInt32(newSelection[i]))<Cards.Count && s>=0) Selection.Add(s);
                 }
                 //Tempoorary fix for exception crashing the program
                 catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
@@ -141,7 +147,7 @@ namespace Rummy
                     //TODO: Refactor this try-catch
                     try {
                         int s;
-                        if((s = Convert.ToInt32(selection[i]))<Cards.Count && s>0) Selection.Add(s);
+                        if((s = Convert.ToInt32(selection[i]))<Cards.Count && s>=0) Selection.Add(s);
                     }
                     //Tempoorary fix for exception crashing the program
                     catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
@@ -186,7 +192,6 @@ namespace Rummy
             if(ExtendedMeld.Validate(AddedCard)) {
                 if (ExtendedMeld is SetMeld) {
                     ExtendedMeld.Cards.Add(AddedCard);
-                    success = true;
                     Cards.RemoveAt(cardindex);
                     if (ExtendedMeld.Cards.Count > Constants.Suit.Length) {
                         for (int i = 0; i < ExtendedMeld.Cards.Count; i++) {
@@ -202,6 +207,21 @@ namespace Rummy
                 if (ExtendedMeld is RunMeld rm)
                 {
                     if(!AddedCard.IsJoker){
+                        if (rm.Cards[^1].IsJoker) {
+                            Card JokerRef = new Card(rm.MeldSuit, rm.Cards[^2].Value + 1);
+                            if (AddedCard.Value - 1 == JokerRef.Value) {
+                                rm.Cards.Add(AddedCard);    
+                                Cards.RemoveAt(cardindex);
+                                return;
+                            }
+                            if (AddedCard.Value == (int)Rummy.Value.Ace) {
+                                if (JokerRef.Value == (int)Rummy.Value.King) {
+                                    rm.Cards.Add(AddedCard);
+                                    Cards.RemoveAt(cardindex);
+                                    return;
+                                }
+                            }
+                        }
                         if (rm.Cards[0].IsJoker) {
                             Card JokerRef = new Card(rm.MeldSuit, rm.Cards[1].Value - 1);
                             if (AddedCard.Value + 1 == JokerRef.Value) {
@@ -209,13 +229,12 @@ namespace Rummy
                                 Cards.RemoveAt(cardindex); 
                                 return;
                             }
-                        }
-                        if (rm.Cards[^1].IsJoker) {
-                            Card JokerRef = new Card(rm.MeldSuit, rm.Cards[^2].Value + 1);
-                            if (AddedCard.Value - 1 == JokerRef.Value) {
-                                rm.Cards.Add(AddedCard);    
-                                Cards.RemoveAt(cardindex);
-                                return;
+                            if (AddedCard.Value == (int)Rummy.Value.Ace) {
+                                if (rm.Cards[0].Value == (int)Rummy.Value.N2) {
+                                    rm.Cards.Insert(0, AddedCard);
+                                    Cards.RemoveAt(cardindex);
+                                    return;
+                                }    
                             }
                         }
 
@@ -224,17 +243,29 @@ namespace Rummy
                             Cards.RemoveAt(cardindex);
                             return;
                         }
-
+                        
                         if (AddedCard.Value - 1 == rm.Cards[^1].Value) {
                             rm.Cards.Add(AddedCard);   
                             Cards.RemoveAt(cardindex);
                             return;
                         }
-
+                        
+                        if (AddedCard.Value == (int)Rummy.Value.Ace) {
+                            if (rm.Cards[^1].Value == (int)Rummy.Value.King) {
+                                rm.Cards.Add(AddedCard);    
+                                Cards.RemoveAt(cardindex);
+                                return;
+                            }
+                            if (rm.Cards[0].Value == (int)Rummy.Value.N2) {
+                                rm.Cards.Insert(0, AddedCard);
+                                Cards.RemoveAt(cardindex);
+                                return;
+                            }
+                        }
                         for (int i = 0; i < rm.Cards.Count; i++) {
                             if (rm.Cards[i].IsJoker) {
-                                if(i > 0 && rm.Cards[i-1].Value == AddedCard.Value - 1){rm.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(rm.Cards[i+1]); rm.Cards.RemoveAt(i+1); success = true; return; }
-                                if(i < rm.Cards.Count-1 && rm.Cards[i+1].Value == AddedCard.Value + 1){rm.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(rm.Cards[i+1]); rm.Cards.RemoveAt(i+1); success = true; return; }
+                                if(i > 0 && rm.Cards[i-1].Value == (AddedCard.Value == (int)Value.Ace? (int)Value.King : AddedCard.Value-1)){rm.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(rm.Cards[i+1]); rm.Cards.RemoveAt(i+1); success = true; return; }
+                                if(i < rm.Cards.Count-1 && rm.Cards[i+1].Value == (AddedCard.Value) + 1){rm.Cards.Insert(i, AddedCard); Cards.RemoveAt(cardindex); Cards.Add(rm.Cards[i+1]); rm.Cards.RemoveAt(i+1); success = true; return; }
                             }
                         }
                     }
