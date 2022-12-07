@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Rummy {
@@ -12,7 +13,6 @@ namespace Rummy {
             if(!Directory.Exists(Folder)){Directory.CreateDirectory(Folder);}
             string UniqueID = DateTime.Now.ToShortDateString() +" "+ DateTime.Now.ToLongTimeString();
             string SavePath = Folder + Path.DirectorySeparatorChar + UniqueID + ".gst";
-            LastSavePath = SavePath;
             StreamWriter sw = File.CreateText(SavePath);
             //sw.;
             sw.WriteLine("#General");
@@ -33,6 +33,8 @@ namespace Rummy {
             sw.WriteLine("#");
 
             sw.Close();
+            if(File.Exists(LastSavePath))File.Delete(LastSavePath);
+            LastSavePath = SavePath;
         }
 
         public static void Load(string Path) {
@@ -52,8 +54,10 @@ namespace Rummy {
                     i++;
                     Program.Game.Deck = new Deck(false);
                     Program.Game.Deck.AddCards(DeserializeCardCollection(raw[i]));
+                    Program.Game.Deck.cards.Reverse();
                     i++;
                     if (raw[i] != "") {
+                        Program.Game.DiscardPile.Clear();
                         Program.Game.DiscardPile.AddCards(DeserializeCardCollection(raw[i]));
                     }
                 }
@@ -74,6 +78,7 @@ namespace Rummy {
                 if (raw[i] == "#Melds") {
                     i++;
                     int j = i;
+                    Program.Game.Melds.Clear();
                     while (raw[j][0] != '#') {
                         string[] split = raw[j].Split(", ");
                         int pid = Convert.ToInt32(split[0]);
