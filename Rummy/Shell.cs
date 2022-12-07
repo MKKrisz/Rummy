@@ -58,24 +58,28 @@ namespace Rummy
             }
             return output.ToArray();
         }
-
+        
+        [PlayerInvokable(Name = "Draw", Description = "Used to reinitalize drawing if and when postponed")]
         public void Draw() {
-            if (!Player.First) {
+            if (!Player.First && !Hand.HasDrawn) {
                 bool chose = false;
                 bool CanUseTrumpCard = Cards.Count >= Constants.MaxCardCount && TrumpCard != null;
+                bool CanUseDiscardPile = Score >= Constants.MinMeldScore; 
                 int CursorState = 0;
-                int Possibilities = 3;
+                int Possibilities = 4;
                 
                 //TODO:(design) do the choosing with \t 
                 Console.WriteLine( "Where to draw from?");
                 Console.WriteLine( " Deck (Random)");
                 if(CanUseTrumpCard){Console.WriteLine($" TrumpCard {TrumpCard.name}");}
                 else {Possibilities--;}
-                if (Score >= Constants.MinMeldScore) { Console.WriteLine($" DiscardPile ({DiscardPile[DiscardPile.CardsLeft - 1].name})"); }         //TODO: Refactor this when refactoring DiscardPile
+                if (CanUseDiscardPile) { Console.WriteLine($" DiscardPile ({DiscardPile[DiscardPile.CardsLeft - 1].name})"); }         //TODO: Refactor this when refactoring DiscardPile
                 else {Possibilities--;}
-                Console.CursorLeft = 0;
+                Console.WriteLine(" Postpone (draw later)");
+                //Console.CursorLeft = 0;
                 Console.CursorTop -= Possibilities;
                 Console.Write(">");
+                Console.CursorLeft = 0;
                 if (Possibilities == 1) {
                     if(CardsLeft > 0) {Cards.Add(GameDeck.Draw());}
                     else if(TrumpCard != null) {Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;}
@@ -90,50 +94,89 @@ namespace Rummy
                         case ConsoleKey.UpArrow:
                             if (CursorState > 0) {
                                 CursorState--;
-                                Console.CursorLeft = 0;
                                 Console.Write(" ");
                                 Console.CursorLeft = 0;
                                 Console.CursorTop--;
                                 Console.Write(">");
+                                Console.CursorLeft = 0;
                             }
                             break;
                         case ConsoleKey.DownArrow:
                             if (CursorState < Possibilities-1) {
                                 CursorState++;
-                                Console.CursorLeft = 0;
                                 Console.Write(" ");
                                 Console.CursorLeft = 0;
                                 Console.CursorTop++;
                                 Console.Write(">");
+                                Console.CursorLeft = 0;
                             }
                             break;
                         case ConsoleKey.Enter:
                             if (CursorState == 0) {
-                                if(CardsLeft > 0) {Cards.Add(GameDeck.Draw()); chose = true;}
-                                else if(TrumpCard != null) {Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null; chose = true;}
+                                if (CardsLeft > 0) {
+                                    Cards.Add(GameDeck.Draw()); chose = true;
+                                    Hand.HasDrawn = true;
+                                }
+                                else if(TrumpCard != null) {
+                                    Cards.Add(TrumpCard.Copy()); 
+                                    Program.Game.TrumpCard = null; 
+                                    chose = true;
+                                    Hand.HasDrawn = true;
+                                }
                             }
 
                             //This line seems redundant
                             //if (CursorState == 1 && CanUseTrumpCard && TrumpCard == null) { chose = false; }
+                            if (CursorState == 1 && !CanUseDiscardPile && !CanUseTrumpCard) {
+                                Hand.HasDrawn = false;
+                                chose = true;
+                            }
 
-                            if (CursorState == 1 && CanUseTrumpCard && TrumpCard != null) { 
+                            else if (CursorState == 1 && CanUseTrumpCard && TrumpCard != null) { 
                                 if(Cards.Count >= Constants.MaxCardCount)
                                 {
                                     Cards.Add(TrumpCard.Copy()); Program.Game.TrumpCard = null;
                                     for (int i = 0; i<Cards.Count; i++){Cards[i].MustBeUsed = true;}
                                     chose = true;
+                                    Hand.HasDrawn = true;
                                 }
                             }
-                            if (CursorState == 1 && !CanUseTrumpCard){ Cards.Add(DiscardPile.PopCard()); chose = true;}
-                            if (CursorState == 2 && CanUseTrumpCard) { Cards.Add(DiscardPile.PopCard()); chose = true;}
-                            if(chose)Console.CursorTop += (Possibilities - CursorState);
+
+                            else if (CursorState == 1 && !CanUseTrumpCard) {
+                                Cards.Add(DiscardPile.PopCard()); chose = true;
+                                Hand.HasDrawn = true;
+                            }
+
+                                
+                            if (CursorState == 2 && CanUseTrumpCard && CanUseDiscardPile) {
+                                Cards.Add(DiscardPile.PopCard()); chose = true;
+                                Hand.HasDrawn = true;
+                            }
+
+                            else if (CursorState == 2 && !CanUseDiscardPile) {
+                                Hand.HasDrawn = false;
+                                chose = true;
+                            }
+
+                            else if (CursorState == 2 && !CanUseTrumpCard) {
+                                Hand.HasDrawn = false;
+                                chose = true;
+                            }
+
+                            if (CursorState == 3) {
+                                Hand.HasDrawn = false;
+                                chose = true;
+                            }
+                            if(chose){Console.CursorTop += (Possibilities - CursorState);}
                             break;
                     }
                 }
-                Console.WriteLine($"New Card: {Cards[^1].name}");
+                if(Hand.HasDrawn)Console.WriteLine($"New Card: {Cards[^1].name}");
             }
+            else if(!Player.First && Hand.HasDrawn){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: Player has already drawn{Color.Reset}");}
             else {
                 Player.First = false;
+                Hand.WasFirst = true;
             }
             Console.CursorVisible = true;
         }
@@ -149,7 +192,9 @@ namespace Rummy
 #endif
             Hand.ResetUsingStatus();
             Hand.List();
-            
+
+            Hand.HasDrawn = false;
+            Hand.WasFirst = false;
             Draw();
             
             Console.Write(PS1);
@@ -237,7 +282,6 @@ namespace Rummy
                             //makes reading a bit easier (otherwise unnecessary line)           I sometimes hate my old self for dumbass shit like this.... I mean, who would've thought this would turn out to be this big??
                             PlayerInvokable match = matches[0];
                             //---------------------------------
-                            
                             //Creates an array with the length of the method(match)'s parameters 
                             object[] Args = new object[match.Params.Length];
                             int j = 0;
@@ -382,7 +426,7 @@ namespace Rummy
         [TurnEnder]
         public void Reload() {
             Save_Load.Load(Save_Load.LastSavePath);
-            Program.Game.CurrentPlayerId--;
+            //Program.Game.CurrentPlayerId--;
         }
 
         [TurnEnder]
@@ -416,6 +460,12 @@ namespace Rummy
             Hand.Ls();
             Console.WriteLine("Melds:");
             LMelds();
+        }
+
+        [PlayerInvokable(Name = "SI", Description = "Sorts with default sorter and display info")]
+        public void SortInfo() {
+            Hand.Sort();
+            Info();
         }
     }
 }
