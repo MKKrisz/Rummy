@@ -144,6 +144,7 @@ namespace Rummy
 
                             else if (CursorState == 1 && !CanUseTrumpCard) {
                                 Cards.Add(DiscardPile.PopCard()); chose = true;
+                                Cards[^1].MustBeUsed = true;
                                 Hand.HasDrawn = true;
                             }
 
@@ -193,6 +194,7 @@ namespace Rummy
             Hand.ResetUsingStatus();
             Hand.List();
 
+            Meld.UpdateAllMeldStatus(Player);
             Hand.HasDrawn = false;
             Hand.WasFirst = false;
             Draw();
