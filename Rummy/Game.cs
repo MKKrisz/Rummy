@@ -14,7 +14,21 @@ namespace Rummy
         public List<Meld> Melds = new List<Meld>();
 
         public int Round;
-        public int CurrentPlayerId = 0;
+
+        private int cpi; 
+        public int CurrentPlayerId {
+            get { return cpi;}
+            set {
+                if (Players != null && value >= Players.Length) {
+                    cpi = 0;
+                    Round++;
+                }
+                else {
+                    cpi = value;
+                }
+            }
+        }
+
         public bool Run = true;
         
         public Game(){}
@@ -30,6 +44,7 @@ namespace Rummy
             Deck = new Deck(true);
             TrumpCard = Deck.Draw(Constants.Random);
             TrumpCard.MustBeUsed = true;
+            CurrentPlayerId = 0;
             
             for (int i = 0; i < PlayerAmount; i++) {
                 Players[i] = new Player(Constants.Random, Deck, i);
@@ -48,7 +63,7 @@ namespace Rummy
         {
             while (Run)
             {
-                if (CurrentPlayerId == Players.Length) {CurrentPlayerId = 0; Round++;}
+                //if (CurrentPlayerId == Players.Length) {CurrentPlayerId = 0; Round++;}
 
                 Player CP = Players[CurrentPlayerId];
                 CP.StartTurn();
