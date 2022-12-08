@@ -23,10 +23,12 @@ namespace Rummy
         public static bool Run = true;
 
         public static Game Game;
+        public static Client Client;
         static void Main(string[] args) {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             bool NewGame = false;
-            bool LoadGame = false; 
+            bool LoadGame = false;
+            bool OnlineGame = false;
             int CursorPos = 0;
             while (Run) {
                 if (NewGame && !LoadGame) {
@@ -39,7 +41,7 @@ namespace Rummy
                         Game = new Game(Players);
                         Game.Loop();
                         NewGame = false;
-			Save_Load.LastSavePath = "";
+			            Save_Load.LastSavePath = "";
                     }
 
                     if (!valid && input != null) {
@@ -68,17 +70,24 @@ namespace Rummy
                     LoadGame = false;
                 }
 
-                if (!NewGame && !LoadGame) {
+                if (OnlineGame) {
+                    Client = MakeClient();
+                    Client.Connect();
+                    Client.Run();
+                }
+
+                if (!NewGame && !LoadGame && !OnlineGame) {
                     Console.Clear();
                     Console.SetCursorPosition(0, 0);
                     Console.WriteLine("Rummy");
                     Console.WriteLine(" New Game");
                     Console.WriteLine(" Load Game");
+                    Console.WriteLine(" Online Game");
                     Console.SetCursorPosition(0, 1 + CursorPos);
                     Console.Write('>');
                     switch (Console.ReadKey(true).Key) {
                         case ConsoleKey.DownArrow:
-                            if (CursorPos < 1) {
+                            if (CursorPos < 2) {
                                 CursorPos++;
                             }
                             break;
@@ -90,6 +99,7 @@ namespace Rummy
                         case ConsoleKey.Enter:
                             if (CursorPos == 0) { NewGame = true;}
                             if(CursorPos == 1){LoadGame = true;}
+                            if(CursorPos == 2){OnlineGame = true;}
                             break;
                         case ConsoleKey.Escape:
                             Run = false;
@@ -97,6 +107,18 @@ namespace Rummy
                     }
                 }
             }
+        }
+
+        public static Client MakeClient() {
+            Console.Clear();
+            Console.WriteLine("Address:");
+            string Address = Console.ReadLine();
+            Console.Clear();
+            Console.WriteLine("Name:");
+            string Name = Console.ReadLine();
+            Client C = new Client(Name, Address);
+            Constants.Random = new Random();
+            return C;
         }
     }
 }
