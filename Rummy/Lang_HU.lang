@@ -1,0 +1,146 @@
+#Program.cs
+How Many Players?:=Hány játékos?
+#későbbi metódus neve
+#exit:=kilép
+Exiting...:=Kilépés...
+[WARNING]: Not An Integer:= [FIGYELEM]: Nem egész szám
+Rummy:=Römi
+ New Game:= Új Játék
+ Load Game:= Játék Betöltése
+ Online Game:= Online játék
+Address::=Cím:
+Name::=Név:
+#
+#Game.cs
+Congratulations! Player:=Gratulálunk! 
+Wins!!:=Győz!!
+#
+#Shell.cs (a nagy falat)
+#Húzás
+draw:=húzz
+Used to reinitalize drawing if and when postponed:=Ezzel kezdheted újra a húzást, ha késleltetted
+#
+Where to draw from?:=Honnan akarsz húzni?
+Deck (Random):=Húzópakli (véletlen lap)
+TrumpCard:=Adu 
+DiscardPile:=Dobópakli
+Postpone (draw later):="Majd húzok később"
+New Card: :=A húzott lap: 
+[WARNING]: Action forbidden: Player has already drawn:=[FIGYELEM]: Tiltott tevékenység: Már húztál
+#
+#a héj maga
+Player:=Játékos
+Round:= Kör
+Press any key to start the turn!:=A kör megkezdéséhez nyomj meg egy gombot!
+[ERROR]: :=[HIBA]: 
+[WARNING]: No method found. Type "help" for available commands:=[FIGYELEM]: Ismeretlen parancs, a "segítség" parancs segíthet
+#
+#Parancsok:
+help:=segítség
+Help:=Segítség
+Displays this message. If given an argument, displays required params:=Ezt az üzenetet írja ki. Ha megadod nei egy parancs nevét, kiírja a bemeneti paramétereit
+Parameters::=Paraméterek:
+(AutoCompleted) :=(Behelyettesítve) 
+[WARNING]: No method named:=[FIGYELEM]:
+was found, or the input wasn't the exact name:=nevű parancs nem létezik (pontosan adtad meg a nevét?)
+#
+clear:=tiszta
+Clear:=Tiszta
+Clears the console:=Tiszta lapot ad (kiüríti a konzolt)
+#
+exit:=kilép
+Exit:=Kilép
+Exits the game:=Kilép a játékból
+#
+reload:=újra
+Reload:=Újra
+Reloads the last saved gamestate, usually sets you back to the start of your turn:=Betölti a legutóbbi játékállást és általában visszarak a kör elejére
+#
+melds:=tercek
+Melds:=Tercek
+Alias for ListMelds:=A KiírTercek rövidebb álneve
+#
+listmelds:=kiírtercek
+ListMelds:=KiírTercek
+Lists all melds:=Kilistázza az összes asztalon lévő tercet
+ID::=Sorszám: 
+#
+info:=infó
+Infó:=Infó
+Displays your hand, and the table:=Kilistázza a lapjaid és az asztalon lévő terceket
+'s hand::= keze:
+Melds::=Tercek:
+#
+si:=si
+SI:=SI
+Sorts (S) with default sorter and displays info (I):=Sorbarakja (S) a lapjaid, majd futtatja az Info (I) parancsot
+#
+say:=mondd
+Say:=Mondd
+In an online game, sends a message to all players:=Online játék alatt ezzel küldhetsz üzenetet a többieknek, mikor épp játékban vagy
+#
+#Hand.cs
+#
+sort:=sorba
+Sort:=Sorba
+Sorts the hand based on input (0/Suit, 1/Value, 2/Both):=Sorbarakja a lapjaid bemenet alapján (0/Szín, 1/Szám, (alapértelmezett)2/Mind)
+suit:=szín
+value:=szám
+both:=mind
+#
+swap:=csere
+Swap:=Csere
+Switches two cards in the hand (useful for manual sorting):=Megcserél két lapot a kezedben (hasznos, ha változtatni akarsz a sorrenden)
+[ERROR]: one of the indexes is out of range:=[HIBA]: Az egyik sorszám határontúli (migráns)
+[WARNING]: the ID-s are the same, switching is not required:=[WARNING]: a sorszámok megegyeznek, a csere felesleges
+#
+discard:=dob
+Discard:=Dob
+Discards a card, and thus ends the turn. Given "n" negative index, discards the last |n|-th card:=Eldob egy lapot, ezzel lezárva a köröd. Ha negatív sorszámot adsz meg neki, "hátulról" számol
+[WARNING]: Player has not drawn:=[FIGYELEM]: Még nem húztál
+Discard pile is null:=A dobópakli nem létezik
+[WARNING]: Invalid index. Give a valid number to proceed, or \"cancel\" to cancel the action:=[FIGYELEM]: Érvénytelen sorszám. Adj meg egy érvényes számot, vagy írd be, hogy "mégse"
+New Number:=Új sorszám
+cancel:=mégse
+[ERROR]: Action forbidden, there are cards required to be used!:=[HIBA]: Tiltott folyamat: vannak még kártyák, amiket fel kell használnod!
+#
+ls:=ls
+Ls:=Ls
+Alias for list:=a "lista" parancs rövidebb álneve
+#
+list:=lista
+List:=Lista
+Lists the player's cards:=Kilistázza a kártyáid
+#
+select:=kijelöl
+Select:=Kijelöl
+Selects the given cardIDs:=Kiválasztja a megadott sorszámú kártyákat
+#
+meld:=lerak
+Meld:=Lerak
+Creates a meld made of the selection given:=Készít egy tercet a kiválasztott lapokból.
+[ERROR]: Nothing was selected, no melds were created:=[HIBA]: Nincs kártya kiválasztva
+[ERROR]: Less than the required amount of cards were selected, no melds were created:=[HIBA]: Kevesebb mint a minimum kártya van kiválasztva
+#
+add:=szúr
+Add:=Szúr
+Tries to extend a selected meld with the given card:=Megpróbálja beszúrni a megadott lapot a megadott tercbe
+[WARNING]: Action forbidden: Score is less than:=[FIGYELEM]: Tiltott folyamat: Lerakott lapjaid értéke kevesebb, mint
+[WARNING]: Action forbidden: the Owner of the meld hasn't reached the minimum score required:= [FIGYELEM]: Tiltott folyamat: a terc tulajdonosa még nem érte el a minimum pontszámot
+[WARNING]: The Joker card you referenced WILL be used up.:=[FIGYELEM]: A Joker, amit megadtál, fel lesz használva!
+Proceed? [y/N]:=Folytatod? [y/N]
+Should the card be placed at the end of the meld? [y/N]:=A terc végére rakjuk a Joker-t? [y/N]
+Card placed at the end of the meld:=A lap a terc végére került
+Card placed at the start of the meld:=A lap a terc elejére került
+[WARNING]: Selected card wasn't added, as it couldn't be inserted anywhere.:=[FIGYELEM]: A kiválasztott lapot nem lehetett beszúrni
+#
+#Meld.cs
+Not enough cards to form a meld:=Ennyi lap nem lesz elég
+Can't have more than:=Nem lehet több, mint
+cards in a set meld:=lap egy színsorban
+Too many Jokers!:=Túl sok Joker!
+Can't have two different values in a set meld:=Színsorban nem lehet 2 különböző számú lap
+Can't have two cards with the same suit in a set meld:=Színsorban nem lehet két egyforma színű lap
+Can't have different suits in a run meld:=Számsorban nem lehet 2 különböző színű lap
+Meld is not continuous:=A számsor nem folytonos
+[IMPORTANT]: Unused Joker found. Shall it be inserted at the end of the meld? [y/N]:=[FONTOS]: Fel nem használt Joker-t találtunk. A sor végére kerüljön? (ha nem, az elejére kerül) [y/N]
