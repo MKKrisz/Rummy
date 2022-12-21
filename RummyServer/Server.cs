@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Rummy;
@@ -17,7 +14,10 @@ namespace RummyServer {
         public TcpListener JoinListener;
         public List<TcpClient> Players = new List<TcpClient>();
         public Dictionary<TcpClient, string> Names = new Dictionary<TcpClient, string>();
+        public Dictionary<string, TcpClient> NamesReversed = new Dictionary<string, TcpClient>();
         public int BufferSize = 2 * 1024;
+
+        public List<string> MessageQueue = new List<string>();
 
         public readonly int Port;
         public string Name;
@@ -26,6 +26,8 @@ namespace RummyServer {
         public bool IsInGame { get; private set; }
         public bool Running { get; private set; }
         
+        private bool SentTurnStartRequest = false;
+        private bool ReceivedGamestateTransitRequest = false;
 
         public Server(string Name, int TargetPlayerCount = 4, int Port = 18274) {
             this.Port = Port;
@@ -51,10 +53,9 @@ namespace RummyServer {
             List<Task> ConnectionHandlers = new List<Task>();
             Console.WriteLine("Waiting for players...");
 
-            bool SentTurnStartRequest = false;
-            bool ReceivedGamestateTransitRequest = false;
-
+            List<Task> shid = new List<Task>();
             while (Running) {
+                HandleDisconnects();
                 if (!IsInGame) {
                     if (JoinListener.Pending()) {
                         ConnectionHandlers.Add(NewConnectionHandler());
@@ -80,28 +81,13 @@ namespace RummyServer {
                         Console.WriteLine("Turn request sent");
                         SentTurnStartRequest = true;
                     }
-
-                    if (!ReceivedGamestateTransitRequest) {
-                        string request = await Receive(Players[Game.CurrentPlayerId]);
-                        if (request == "OK, Gimme state") {
-                            Console.WriteLine("Response received, sending current GameState");
-                            ReceivedGamestateTransitRequest = true;
-                            string GameState = Save_Load.Serialize(Game);
-                            await Send(Players[Game.CurrentPlayerId], GameState);
-                        }
-                    }
-
-                    if (SentTurnStartRequest && ReceivedGamestateTransitRequest) {
-                        string GameState = await Receive(Players[Game.CurrentPlayerId]);
-                        if (GameState.StartsWith("#General")) {
-                            Console.WriteLine("Player has finished their turn, moving on to next player");
-                            Game = Save_Load.Load(GameState.Split('\n'));
-                            Game.CurrentPlayerId++;
-                            SentTurnStartRequest = false;
-                            ReceivedGamestateTransitRequest = false;
-                        }
-                    }
                 }
+
+                for (int i = 0; i < Players.Count; i++) {
+                    shid.Add(ProcessIncomingMessage(await Receive(Players[i]), Players[i]));
+                }
+
+                shid.Add(TransmitMessages());
             }
         }
 
@@ -124,18 +110,102 @@ namespace RummyServer {
                 if (name != "" && !Names.ContainsValue(name) && Players.Count()<6) {
                     Verified = true;
                     Names.Add(Client, name);
+                    NamesReversed.Add(name, Client);
                     Players.Add(Client);
                     Console.WriteLine($"{name} joined!");
+                    for (int i = 0; i < Players.Count; i++) {
+                        await Send(Players[i], $":newplayer:{name}");
+                    }
                 }
                 else{_cleanupClient(Client);}
             }
         }
 
+        public void HandleDisconnects() {
+            for(int i = 0; i<Players.Count; i++) {
+                TcpClient c = Players[i];
+                if (IsDead(c)) {
+                    Console.Write($"{Names[c]} has unexpectedly disconnected");
+                    if (Players.Count == Constants.MinPlayerCount && IsInGame) {
+                        Console.Write(", not enough players left, ending game\n");
+                        IsInGame = false;
+                        MessageQueue.Add(":endofgame:");
+                    }
+                    else if(IsInGame){
+                        Console.Write(", addinng their cards to the deck\n");
+                        Game.Deck.AddCards(Game.Players[i].Cards);
+                        for (int j = 0; j < Game.Melds.Count; j++) {
+                            if(Game.Melds[j].PlayerID == i){
+                                Game.Deck.AddCards(Game.Melds[j].Cards);
+                                Game.Melds.RemoveAt(j);
+                                j--;
+                            }
+                        }
+
+                        List<Player> buffer = Game.Players.ToList();
+                        buffer.RemoveAt(i);
+                        Game.Players = buffer.ToArray();
+                    }
+                    Players[i].Close();
+                    Players.RemoveAt(i);
+                }
+            }
+        }
+
+        private bool IsDead(TcpClient c) {
+            try {
+                Socket s = c.Client;
+                return s.Poll(1 * 1000, SelectMode.SelectRead) && c.Available == 0; // && s.Available == 0;
+            }
+            catch (SocketException) {
+                return true;
+            }
+        }
+        
+        
         public async Task Send(TcpClient Client, string Message) {
             byte[] MsgBytes = Encoding.UTF8.GetBytes(Message);
             await Client.GetStream().WriteAsync(MsgBytes);
         }
 
+        public async Task ProcessIncomingMessage(string message, TcpClient Client) {      //ex.:      :msg:everyone:Szervusztok!
+            if (message.StartsWith(":msg:")) {
+                string proc = message.Remove(0, 5);
+                string tosend = ":msg:";
+                if (proc.Contains(':')) {
+                    string receiver = proc.Split(':')[0];
+                    tosend += Names[Client] + ":" + proc.Remove(0, proc.Split(':')[0].Length + 1);
+                    if (receiver == "everyone") {
+                        MessageQueue.Add(tosend);
+                    }
+                    else {
+                        Send(NamesReversed[receiver], tosend);
+                    }
+                }
+            }
+            if (message == "OK, Gimme state" && IsInGame && !ReceivedGamestateTransitRequest) {
+                Console.WriteLine("Response received, sending current GameState");
+                ReceivedGamestateTransitRequest = true;
+                string GameState = Save_Load.Serialize(Game);
+                await Send(Players[Game.CurrentPlayerId], GameState);
+            }
+            if (message.StartsWith("#General") && IsInGame && ReceivedGamestateTransitRequest && SentTurnStartRequest) {
+                Console.WriteLine("Player has finished their turn, moving on to next player");
+                Game = Save_Load.Load(message.Split('\n'));
+                Game.CurrentPlayerId++;
+                SentTurnStartRequest = false;
+                ReceivedGamestateTransitRequest = false;
+            }
+        }
+
+        private async Task TransmitMessages() {
+            for (int i = 0; i < MessageQueue.Count; i++) {
+                for (int j = 0; j < Players.Count; j++) {
+                    await Send(Players[j], MessageQueue[i]);
+                }
+            }
+            MessageQueue.Clear();
+        }
         public async Task<string> Receive(TcpClient Client) {
             try {
                 int Length = Client.Available;
