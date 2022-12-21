@@ -55,11 +55,11 @@ namespace Rummy
         [PlayerInvokable(Name = "Swap", Description = "Switches two cards in the hand (useful for manual sorting)")]
         public void Swap(int a, int b) {
             if (a > Cards.Count || b > Cards.Count) {
-                Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: one of the indexes is out of range{Color.Reset}");
+                Console.WriteLine($"{Colors.Error.AnsiFGCode}{Constants.Translator.Translate("[ERROR]: one of the indexes is out of range")}{Color.Reset}");
                 return;
             }
             if (a == b) {
-                Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: the ID-s are the same, switching is not required{Color.Reset}");
+                Console.WriteLine($"{Colors.Warning.AnsiFGCode}{Constants.Translator.Translate("[WARNING]: the ID-s are the same, switching is not required")}{Color.Reset}");
                 return;
             }
 
@@ -75,15 +75,15 @@ namespace Rummy
             if(id < 0){id = Cards.Count + id;}
 
             if (!HasDrawn && !WasFirst) {
-                Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Player has not drawn{Colors.Reset}");
+                Console.WriteLine($"{Colors.Warning.AnsiFGCode}{Constants.Translator.Translate("[WARNING]: Player has not drawn")}{Colors.Reset}");
                 return false;
             } 
-            if(DiscardPile == null) throw new Exception("Discard pile is null");
+            if(DiscardPile == null) throw new Exception(Constants.Translator.Translate("Discard pile is null"));
             while (id >= Cards.Count) {
-                Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: Invalid index. Give a valid number to proceed, or \"cancel\" to cancel the action{Colors.Reset}\nNew Number> ");
+                Console.Write($"{Colors.Warning.AnsiFGCode}{Constants.Translator.Translate("[WARNING]: Invalid index. Give a valid number to proceed, or \"cancel\" to cancel the action")}{Colors.Reset}\n{Constants.Translator.Translate("New Number")}> ");
                 string s = Console.ReadLine();
                 if(Int32.TryParse(s, out int b)) {id = b;}
-                else if(s.ToLower() == "cancel"){return false;}
+                else if(s.ToLower() == "cancel" || Constants.Translator.Reverse(s.ToLower()) == "cancel"){return false;}
             }
             
             /*for (int i = 0; i < Cards.Count; i++) {
@@ -92,7 +92,7 @@ namespace Rummy
                 }
             }*/
             if (!CanEndTurn) {
-                Console.Write($"{Colors.Error.AnsiFGCode}[ERROR]: Action forbidden, there are cards required to be used!\n");
+                Console.WriteLine($"{Colors.Error.AnsiFGCode}{Constants.Translator.Translate("[ERROR]: Action forbidden, there are cards required to be used!")}{Color.Reset}");
                 return false;
             }
 
@@ -131,7 +131,7 @@ namespace Rummy
                     if((s = Convert.ToInt32(newSelection[i]))<Cards.Count && s>=0) Selection.Add(s);
                 }
                 //Tempoorary fix for exception crashing the program
-                catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
+                catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}{Constants.Translator.Translate("[ERROR]: ")}{E.Message}{Color.Reset}");}
             }
         }
         private void Select(IEnumerable<int> selection) => Selection.AddRange(selection);
@@ -139,8 +139,8 @@ namespace Rummy
         [PlayerInvokable(Name = "Meld",  Description = "Creates a meld made of the selection given")]
         public void Meld([AutoCompleteParameter]List<Meld> melds, [AutoCompleteParameter]Player P, params object[] selection) {
             if (selection.Length == 0) {
-                if(Selection.Count == 0){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: Nothing was selected, no melds were created{Color.Reset}");return;}
-                if(Selection.Count  < 3){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: Less than the required amount of cards were selected, no melds were created{Color.Reset}");return;}
+                if(Selection.Count == 0){Console.WriteLine($"{Colors.Error.AnsiFGCode}{Constants.Translator.Translate("[ERROR]: Nothing was selected, no melds were created")}{Color.Reset}");return;}
+                if(Selection.Count  < 3){Console.WriteLine($"{Colors.Error.AnsiFGCode}{Constants.Translator.Translate("[ERROR]: Less than the required amount of cards were selected, no melds were created")}{Color.Reset}");return;}
             }
             else {
                 for (int i = 0; i < selection.Length; i++) {
@@ -150,7 +150,7 @@ namespace Rummy
                         if((s = Convert.ToInt32(selection[i]))<Cards.Count && s>=0) Selection.Add(s);
                     }
                     //Tempoorary fix for exception crashing the program
-                    catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");}
+                    catch(Exception E){Console.WriteLine($"{Colors.Error.AnsiFGCode}{Constants.Translator.Translate("[ERROR]: ")}{E.Message}{Color.Reset}");}
                 }
             }
 
@@ -161,15 +161,16 @@ namespace Rummy
             try {
                 newMeld = Rummy.Meld.Melder(SelectedCards, PlayerID);
             }
-            catch(Exception E) { Console.WriteLine($"{Colors.Error.AnsiFGCode}[ERROR]: {E.Message}{Color.Reset}");success = false; }
-            if(success) {
+            catch(Exception E) { Console.WriteLine($"{Colors.Error.AnsiFGCode}{Constants.Translator.Translate("[ERROR]: ")}{E.Message}{Color.Reset}");success = false; }
+
+            if (success) {
                 Selection.Sort();
-                for(int i = Selection.Count-1; i>=0; i--)Cards.RemoveAt(Selection[i]);
-                for(int i = 0; i < newMeld.Cards.Count; i++) newMeld.Cards[i].MustBeUsed = true;
+                for (int i = Selection.Count - 1; i >= 0; i--) Cards.RemoveAt(Selection[i]);
+                for (int i = 0; i < newMeld.Cards.Count; i++) newMeld.Cards[i].MustBeUsed = true;
                 melds.Add(newMeld);
                 P.Melds.Add(newMeld);
-                Selection.Clear();
             }
+            Selection.Clear();
         }
 
         [PlayerInvokable(Name = "Add", Description = "Tries to extend a selected meld with the given card")]
@@ -179,11 +180,11 @@ namespace Rummy
             Meld ExtendedMeld = melds[meldindex];
             if (ExtendedMeld.PlayerID != PlayerID) {
                 if (Score < Constants.MinMeldScore) {
-                    Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: Score is less than {Constants.MinMeldScore}{Color.Reset}");
+                    Console.WriteLine($"{Colors.Warning.AnsiFGCode}{Constants.Translator.Translate("[WARNING]: Action forbidden: Score is less than")} {Constants.MinMeldScore}{Color.Reset}");
                     return;
                 }
                 if (!ExtendedMeld.CanBeAddedTo) {
-                    Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Action forbidden: the Owner of the meld hasn't reached the minimum score required.{Color.Reset}");
+                    Console.WriteLine($"{Colors.Warning.AnsiFGCode}{Constants.Translator.Translate("[WARNING]: Action forbidden: the Owner of the meld hasn't reached the minimum score required")}{Color.Reset}");
                     return;
                 }
             }
@@ -271,27 +272,31 @@ namespace Rummy
                     }
 
                     if (AddedCard.IsJoker) {
-                        Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: The Joker card you referenced WILL be used up.{Colors.Important.AnsiFGCode} Proceed? [y/N] ");
-                        char input = Console.ReadKey(false).KeyChar;
+                        Console.Write($"{Colors.Warning.AnsiFGCode}[WARNING]: The Joker card you referenced WILL be used up.{Colors.Important.AnsiFGCode} {Constants.Translator.Translate("Proceed? [y/N]")} ");
+                        ConsoleKeyInfo? n_key = Constants.IH.Pull();
+                        while(!n_key.HasValue){n_key = Constants.IH.Pull();}
+                        char input = n_key.Value.KeyChar;
                         Console.Write("\n");
                         if (input == 'y') {
-                            Console.Write($"{Colors.Important.AnsiFGCode}Should the card be placed at the end of the meld? [y/N]{Color.Reset} ");
-                            input = Console.ReadKey(false).KeyChar;
+                            Console.Write($"{Colors.Important.AnsiFGCode}{Constants.Translator.Translate("Should the card be placed at the end of the meld? [y/N]")}{Color.Reset} ");
+                            n_key = Constants.IH.Pull();
+                            while(!n_key.HasValue){n_key = Constants.IH.Pull();}
+                            input = n_key.Value.KeyChar;
                             Console.Write("\n");
                             if (input == 'y') {
                                 rm.Cards.Add(AddedCard);
-                                Console.WriteLine($"{Colors.Important.AnsiFGCode} Card placed at the end of the meld{Color.Reset}");
+                                Console.WriteLine($"{Colors.Important.AnsiFGCode} {Constants.Translator.Translate("Card placed at the end of the meld")}{Color.Reset}");
                             }
                             else {
                                 rm.Cards.Insert(0, AddedCard);
-                                Console.WriteLine($"{Colors.Important.AnsiFGCode} Card placed at the start of the meld{Color.Reset}");
+                                Console.WriteLine($"{Colors.Important.AnsiFGCode} {Constants.Translator.Translate("Card placed at the start of the meld")}{Color.Reset}");
                             }
                             Cards.RemoveAt(cardindex);
                         }
                     }
                 }
             }
-            else{Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Selected card wasn't added, as it couldn't be inserted anywhere.{Color.Reset}");}
+            else{Console.WriteLine($"{Colors.Warning.AnsiFGCode}{Constants.Translator.Translate("[WARNING]: Selected card wasn't added, as it couldn't be inserted anywhere.")}{Color.Reset}");}
             //if(!success){Console.WriteLine($"{Colors.Warning.AnsiFGCode}[WARNING]: Insert attempt was unsuccessful{Color.Reset}");}
         }
         
