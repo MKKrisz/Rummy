@@ -74,7 +74,7 @@ namespace Rummy
                 if (CP.Cards.Count == 0)
                 {
                     Run = false;
-                    Console.WriteLine($"Congratulations! Player {CurrentPlayerId} Wins!!");
+                    Console.WriteLine($"{Constants.Translator.Translate("Congratulations! Player")} {CurrentPlayerId} {Constants.Translator.Translate("Wins!!")}");
                     Console.ReadKey(true);
                 }
 
