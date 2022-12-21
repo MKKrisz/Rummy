@@ -30,13 +30,13 @@ namespace Rummy
         public abstract int Evaluate();
         public static Meld Melder(List<Card> Cards, int playerID){
             Meld Output;
-            if(Cards.Count<3){throw new Exception("Not enough cards to form a meld");}
+            if(Cards.Count<3){throw new Exception(Constants.Translator.Translate("Not enough cards to form a meld"));}
             
             if(Cards[0].Value == Cards[1].Value){Output = new SetMeld();}
             else{Output = new RunMeld();}
 
             if (Output is SetMeld sm) {
-                if (Cards.Count > Constants.Suit.Length) {throw new Exception($"Can't have more than {Constants.Suit.Length} cards in a set meld");}
+                if (Cards.Count > Constants.Suit.Length) {throw new Exception($"{Constants.Translator.Translate("Can't have more than")} {Constants.Suit.Length} {Constants.Translator.Translate("cards in a set meld")}");}
                 Cards = Card.Sort(Cards.ToArray(), Hand.SortType.Suit).ToList();
                 
                 int firstNonJoker = 0;
@@ -47,12 +47,12 @@ namespace Rummy
                 int JokerCount = 0;
                 for (int i = 0; i < Cards.Count; i++) {
                     if(Cards[i].IsJoker){ JokerCount++; } 
-                    if(JokerCount>= Cards.Count/2.0){throw new Exception("Too many Jokers!");}
+                    if(JokerCount>= Cards.Count/2.0){throw new Exception(Constants.Translator.Translate("Too many Jokers!"));}
 
-                    if (!Cards[i].IsJoker && Cards[i].Value != sm.MeldValue) { throw new Exception("Can't have two different values in a set meld");}
+                    if (!Cards[i].IsJoker && Cards[i].Value != sm.MeldValue) { throw new Exception(Constants.Translator.Translate("Can't have two different values in a set meld"));}
                     for (int j = i+1; j < Cards.Count; j++) { 
                         if (!Cards[i].IsJoker && !Cards[j].IsJoker && Cards[i].Suit == Cards[j].Suit) { 
-                            throw new Exception("Can't have two cards with the same suit in a set meld");
+                            throw new Exception(Constants.Translator.Translate("Can't have two cards with the same suit in a set meld"));
                         }
                     }
                 }
@@ -75,9 +75,9 @@ namespace Rummy
                 int JokerCount = 0;
                 for (int i = 0; i < Cards.Count; i++) {
                     if(Cards[i].IsJoker){ JokerCount++; } 
-                    if(JokerCount>= Cards.Count/2.0){throw new Exception("Too many Jokers!");}
+                    if(JokerCount>= Cards.Count/2.0){throw new Exception(Constants.Translator.Translate("Too many Jokers!"));}
                 
-                    if (!Cards[i].IsJoker && Cards[i].Suit != rm.MeldSuit){throw new Exception("Can't have different suits in a run meld"); }
+                    if (!Cards[i].IsJoker && Cards[i].Suit != rm.MeldSuit){throw new Exception(Constants.Translator.Translate("Can't have different suits in a run meld")); }
 
                     if (i > 0 && !Cards[i].IsJoker && !Cards[i - 1].IsJoker && Cards[i - 1].Value != (Cards[i].Value == (int)Rummy.Value.Ace ? (int)Rummy.Value.King : Cards[i].Value - 1)) {
                         if (Cards[0].IsJoker) {
@@ -85,12 +85,12 @@ namespace Rummy
                             Cards.RemoveAt(0);
                             Cards.Insert(i-1, Joker);
                         }
-                        else{throw new Exception("Meld is not continiuos");}
+                        else{throw new Exception(Constants.Translator.Translate("Meld is not continuous"));}
                     }
                 }
                 bool choice = true;
                 while(Cards[0].IsJoker && choice) {
-                    Console.Write($"{Colors.Important.AnsiFGCode}[IMPORTANT]: Unused Joker found. Shall it be inserted at the end of the meld? [y/N]{Color.Reset} ");
+                    Console.Write($"{Colors.Important.AnsiFGCode}{Constants.Translator.Translate("[IMPORTANT]: Unused Joker found. Shall it be inserted at the end of the meld? [y/N]")}{Color.Reset} ");
                     char input = Console.ReadKey(false).KeyChar;
                     Console.Write("\n");
                     if(input == 'y'){Cards.Add(Cards[0]); Cards.RemoveAt(0);}
