@@ -56,8 +56,8 @@ namespace Rummy {
                     output.TrumpCard = DeserializeCardCollection(SerializedGame[i])[0];
                     i++;
                     output.Deck = new Deck(false);
-                    output.Deck.AddCards(DeserializeCardCollection(SerializedGame[i]));
-                    output.Deck.cards.Reverse();
+                    output.Deck.cards.AddRange(DeserializeCardCollection(SerializedGame[i]));
+                    //output.Deck.cards.Reverse();
                     i++;
                     if (SerializedGame[i] != "") {
                         output.DiscardPile.Clear();
@@ -103,7 +103,7 @@ namespace Rummy {
                             M = sm;
                         }
                         if(M != null){output.Melds.Add(M);}
-                        if(M != null){output.Players[Array.FindIndex(output.Players, x => x.ID == M.PlayerID)].Melds.Add(M);}
+                        if(M != null){output.Players[pid].Melds.Add(M);}
                         j++;
                     }
                     j--;
